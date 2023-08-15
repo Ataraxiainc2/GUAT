@@ -1,127 +1,296 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
-    <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-          tex2jax: {inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true}
-        });
-    </script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Visualización de Datos con D3.js</title>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js"></script>
     <style>
         body {
-            font-family: 'Comfortaa', cursive;
-            margin: 20px;
-            color: greenyellow;
-            background-color: #1a1a1a; /* Fondo oscuro */
-            line-height: 1.6;
-            user-select: none;
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
+            font-family: 'Arial', monospace;
+            background-color: #15202B;
+            color: #FFFFFF;
+            margin: 0;
+            padding: 0;
+            user-select: none
         }
 
-        h1 {
-            color: #1da1f2;
-            text-align: center; /* Centra el texto horizontalmente */
-            user-select: text;
-        }
-
-        h2 {
-            color: #1da1f2; /* Color azul de Twitter */
-            font-size: 20px; /* Tamaño de fuente un poco menor, ajústalo según tus necesidades */
-            user-select: text;
-        }
-
-        .tooltip-container {
-            position: relative;
-        }
-
-        .tooltip-trigger {
-            cursor: pointer;
-            font-size: 24px;
-            text-decoration: none;
-        }
-
-        .tooltip-content {
-            display: none;
-            position: relative;
-            background-color: #1a1a1a; /* Color de fondo azul de Twitter */
-            color: #ff6600; /* Texto blanco */
-            border: 1px solid #FFA726; /* Borde naranja */
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            padding: 10px; /* Espaciado interno */
-            width: auto; /* Ancho del tooltip */
-            border-radius: 5px; /* Bordes redondeados */
-            font-size: 16px; /* Tamaño de fuente más pequeño para el contenido del tooltip */
-        }
-
-            .tooltip-content ul {
-                margin-left: 16px;
-                list-style-type: disc; /* Viñetas para la lista */
-            }
-
-            .tooltip-content li {
-                margin-bottom: 5px;
-            }
-
-        .tooltip-container:hover .tooltip-content {
-            display: block;
-        }
-
-        .tooltip-content .math-variable {
-            font-size: 20px; /* Ajusta este valor según tus necesidades */
-        }
-
-        .formula {
-            margin-bottom: 30px; /* Espacio entre las fórmulas */
-        }
-
-            .formula .tooltip-trigger {
-                color: #ff6600; /* Color naranja brillante */
-                font-size: 24px; /* Tamaño de fuente más grande para la fórmula */
-            }
-
-        .instruction {
-            font-size: 14px; /* Ajusta el tamaño de fuente según tus preferencias */
-            color: #a0a0a0; /* Color más claro para indicar que es una nota o instrucción */
-            text-align: center; /* Centra el texto horizontalmente */
-            margin: 10px 0; /* Espacio arriba y abajo del párrafo */
+        #chart-container {
+            width: 100%;
+            height: 100%;
         }
     </style>
-    <title>Fórmulas</title>
 </head>
 <body>
-    <h1>FÓRMULAS RELACIONADAS CON LAS CLASES</h1>
-    <p class="instruction">
-        Cada fórmula presentada en esta página debería estar vinculada a una aplicación creada por el estudiante. Al hacer clic en la fórmula, se abrirá una increíble aplicación que demuestra su aplicación práctica. Explora y disfruta del ingenio y la creatividad detrás de cada fórmula.
-    </p>
-    <div id="formulas-container"></div>
+    <div id="chart-container">
+    </div>
     <script>
-        fetch('https://raw.githubusercontent.com/Ataraxiainc2/GUAT/main/formulas.json')
-            .then(response => response.json())
-            .then(data => {
-                const container = document.getElementById('formulas-container');
-        data.forEach(item => {
-            const title = item[0];
-            const formula = item[1];
-            const tooltip = item[2];
-            const url = item[3];
-                    const formulaDiv = document.createElement('div');
-                    formulaDiv.className = 'formula';
-                    formulaDiv.innerHTML = `
-                                <h2>${title}</h2>
-                                <div class="tooltip-container">
-                                    <a href="${url}" target="_blank" class="tooltip-trigger">${formula}</a>
-                                    <div class="tooltip-content">${tooltip.replace(/\n/g, '<br>')}</div>
-                                </div>
-                            `;
-                    container.appendChild(formulaDiv);
+        // Obtener el tamaño de la pantalla
+        let windowWidth = window.innerWidth;
+        let windowHeight = window.innerHeight;
+
+        //La fuente inicial toma en cuenta el tamaño de la ventana usada
+        let baseFontSize = Math.min(windowWidth, windowHeight) * 0.011;
+
+        // Carga de datos y creación de la visualización
+        d3.json("https://raw.githubusercontent.com/Ataraxiainc2/C-H-N/master/source/repos/Formula%20de%20la%20calidada%20del%20software/Formula%20de%20la%20calidada%20del%20software/datos.json").then(function (data) {
+            const padding = 2;
+            const width = document.documentElement.clientWidth - 2 * padding;
+            const height = document.documentElement.clientHeight - 2 * padding;
+            const margin = { top: padding, right: 500, bottom: padding, left: padding };
+
+            let root = d3.hierarchy(data);
+            const tree = d3.tree()
+                .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
+                .separation((a, b) => {
+                    let separation = (a.parent === b.parent ? 1 : 2) / a.depth;
+                    return separation * 0.1;  // incrementar el factor de separación
                 });
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+
+            tree(root);
+
+            root.descendants().forEach(node => {
+                node.x0 = node.x;
+                node.y0 = node.y;
+                if (node.depth > -0) {
+                    if (node.children) {
+                        node._children = node.children;
+                        node.children = null;
+                    }
+                }
             });
+
+            const svg = d3.create("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .call(d3.zoom().on("zoom", function (event) {
+                    linkGroup.attr("transform", event.transform);
+                    nodeGroup.attr("transform", event.transform);
+                    textGroup.attr("transform", event.transform);
+                }));
+
+            const linkGroup = svg.append("g")
+                .attr("fill", "none")
+                .attr("transform", `translate(0,${margin.top})`);
+
+            const nodeGroup = svg.append("g")
+                .attr("transform", `translate(0,${margin.top})`);
+
+            const textGroup = svg.append("g")
+                .attr("stroke-linejoin", "round")
+                .attr("stroke-width", 2)
+                .style("font", "16px 'Arial', monospace")
+                .attr("transform", `translate(0,${margin.top})`);
+
+            function update(source) {
+                const duration = d3.event && d3.event.altKey ? 2500 : 250;
+                const treeData = tree(root);
+                root.eachBefore(d => {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+
+                const node = nodeGroup.selectAll("g")
+                    .data(treeData.descendants(), d => d.id);
+
+                const nodeEnter = node.enter().append("g")
+                    .attr("transform", d => `translate(${source.y0},${source.x0})`)
+                    .attr("fill-opacity", 0)
+                    .attr("stroke-opacity", 0)
+                    .on("click", function (event, d) {
+                        if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
+                            if (d.children) {
+                                d._children = d.children;
+                                d.children = null;
+                            } else {
+                                d.children = d._children;
+                                d._children = null;
+                            }
+                            update(d);
+                        }
+                    });
+
+                nodeEnter.append("circle")
+                    .attr("r", d => 5 / (1 + 1 * d.depth))
+                    .attr("fill", d => d.data.color || "white");
+
+                const text = nodeEnter.append("text")
+                    .attr("dy", function (d) {
+                        // si el nodo no se ha expandido, centrar el texto
+                        if (d.children == null) {
+                            return "0.3em";  // ajustar este valor para centrar el texto
+                        }
+                        // si el nodo se ha expandido, colocar el texto arriba
+                        else {
+                            return "-0.2em";
+                        }
+                    })
+                    .attr("x", 5)  // inicialmente, alinear el texto a la derecha del nodo
+                    .text(d => d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""))  // Aquí se añaden las notas después de cada etiqueta
+                    .attr("fill", d => d.data.color || "white")
+                    .attr("stroke-linejoin", "round")
+                    .attr("stroke-width", 3)
+                    .attr("stroke", "none")
+                    .style("font-size", function (d) {
+                        let bbox = this.getBBox();
+                        let textWidth = bbox.width;
+                        let textHeight = bbox.height;
+                        let availableWidth = width - d.y;
+                        let siblingDistance = Infinity;
+
+                        if (d.parent) {
+                            let nodeIndex = d.parent.children.indexOf(d);
+                            if (nodeIndex < d.parent.children.length - 1) {
+                                siblingDistance = d.parent.children[nodeIndex + 1].x - d.x;
+                            } else if (nodeIndex > 0) {
+                                siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
+                            }
+                        }
+
+                        let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
+                        fontSize = fontSize * (1 - 0.05 * d.depth);
+                        fontSize = Math.max(fontSize, 2);
+                        return fontSize + "px";
+                    });
+
+                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.011;
+                text
+                    .on("mouseenter", function (event, d) {
+                        d3.select(this).style("font-size", hoverFontSize + "px");
+                    })
+                    .on('mouseleave', function (d) {
+                        d3.select(this).attr('stroke', 'none');
+                    })
+                    .on("mouseleave", function (d) {
+                        d3.select(this).style("font-size", function (d) {
+                            let bbox = this.getBBox();
+                            let textWidth = bbox.width;
+                            let textHeight = bbox.height;
+                            let availableWidth = width - d.y;
+                            let siblingDistance = Infinity;
+
+                            if (d.parent) {
+                                let nodeIndex = d.parent.children.indexOf(d);
+                                if (nodeIndex < d.parent.children.length - 1) {
+                                    siblingDistance = d.parent.children[nodeIndex + 1].x - d.x;
+                                } else if (nodeIndex > 0) {
+                                    siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
+                                }
+                            }
+
+                            let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
+                            fontSize = fontSize * (1 - 0.05 * d.depth);
+                            fontSize = Math.max(fontSize, 2);
+                            return fontSize + "px";
+                        });
+                    });
+                const nodeUpdate = node.merge(nodeEnter).transition().duration(duration)
+                    .attr("fill-opacity", 1)
+                    .attr("stroke-opacity", 1)
+                    .attr("transform", d => `translate(${d.y},${d.x})`)
+                    .end().then(() => {
+                        node.attr("transform", d => `translate(${d.y},${d.x})`);
+
+                        text.attr("x", function (d) {
+                            let text = this;
+                            let textLength = text.getComputedTextLength();
+                            let xPosition = 5;  // posición inicial a la derecha del nodo
+
+                            // si el nodo se ha expandido y no está en la tercera jerarquía, ajusta la posición x para que el final del texto coincida con el inicio del nodo
+                            if (d.children != null && d.depth != 3) {
+                                xPosition -= textLength + 15;  // mover el texto a la izquierda por su ancho
+                            }
+
+                            // si el nodo se ha expandido y está en la tercera jerarquía, ajusta la posición x moviéndolo 200 unidades hacia la izquierda
+                            if (d.children != null && d.depth == 3) {
+                                xPosition -= 200;  // mover el texto a la izquierda por 200 unidades
+                            }
+
+                            return xPosition;
+                        });
+                    });
+
+                const nodeExit = node.exit()
+                    .attr("fill-opacity", 0)
+                    .attr("stroke-opacity", 0)
+                    .transition().duration(duration)
+                    .remove();
+
+                const link = linkGroup.selectAll("path")
+                    .data(treeData.links(), d => d.target.id);
+
+                const linkEnter = link.enter().append("path")
+                    .attr("fill", "none")
+                    .attr("stroke", d => d.target.data.color || "#808080")
+                    .attr("stroke-opacity", 0.4)
+                    .attr("stroke-width", 1.5)
+                    .attr("d", d => {
+                        const o = { x: source.x0, y: source.y0 };
+                        return d3.linkHorizontal()
+                            .x(d => d.y)
+                            .y(d => d.x)({ source: o, target: o });
+                    });
+
+
+                const linkUpdate = link.merge(linkEnter).transition().duration(duration)
+                    .attr("d", d => {
+                        return d3.linkHorizontal()
+                            .x(d => d.y)
+                            .y(d => d.x)(d);
+                    });
+
+                const linkExit = link.exit()
+                    .transition().duration(duration)
+                    .attr("d", d => {
+                        const o = { x: source.x, y: source.y };
+                        return d3.linkHorizontal()
+                            .x(d => d.y)
+                            .y(d => d.x)({ source: o, target: o });
+                    })
+                    .remove();
+
+                // Para los enlaces que se actualizan
+                link.merge(linkEnter).transition().duration(duration)
+                    .attr("d", function (d) {
+                        if (isNaN(d.source.x) || isNaN(d.source.y) || isNaN(d.target.x) || isNaN(d.target.y)) {
+                            return "M0,0";  // Esto dibujará una línea en la posición (0,0) en lugar de fallar
+                        }
+                        return d3.linkHorizontal()
+                            .x(d => d.y)
+                            .y(d => d.x)(d);
+                    });
+
+                link.exit().transition().duration(duration).remove()
+                    .attr("d", d => {
+                        if (isNaN(source.x) || isNaN(source.y)) {
+                            console.log('Invalid source:', source);
+                            return;
+                        }
+                        const o = { x: source.x, y: source.y };
+                        return d3.linkHorizontal()
+                            .x(d => d.y)
+                            .y(d => d.x)(d);
+                    })
+                root.eachBefore(d => {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+            }
+            update(root);
+
+            document.getElementById("chart-container").appendChild(svg.node());
+
+            window.addEventListener("resize", function () {
+                const width = document.documentElement.clientWidth - 2 * padding;
+                const height = document.documentElement.clientHeight - 2 * padding;
+                // Actualiza el tamaño del gráfico aquí
+            });
+
+            fetch('/datos')
+                .then(response => response.json())
+        }).catch(function (error) {
+        });
     </script>
 </body>
 </html>
