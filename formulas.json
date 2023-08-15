@@ -1,0 +1,92 @@
+[
+    [
+        "Ecuación de Bernoulli para el Flujo Compresible",
+        "\\[ P + \\frac{1}{2} \\rho V^2 + \\rho gh = \\text{constante} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Control Proporcional-Integral-Derivativo (PID)",
+        "\\[ K_p e(t) + K_i \\int e(t) \\,dt + K_d \\frac{de(t)}{dt} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación del Empuje de un Motor a Reacción",
+        "\\[ F = \\dot{m} V_e - \\dot{m} V_0 \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Shannon-Hartley",
+        "\\[ C = B \\log_2 (1 + S/N) \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Fórmula de Weibull para la Distribución de Fallos",
+        "\\[ f(x;\\lambda,k) = \\begin{cases} \\frac{k}{\\lambda}\\left(\\frac{x}{\\lambda}\\right)^{k-1}e^{-(x/\\lambda)^{k}} & x \\geq 0, \\\\ 0 & x < 0 \\end{cases} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Fórmula de Bayes",
+        "\\[ P(A|B) = \\frac{P(B|A) \\cdot P(A)}{P(B)} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Baskara para la Predicción de Demanda",
+        "\\[ x = \\frac{-b \\pm \\sqrt{b^2 - 4ac}}{2a} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Coordenadas de Radar",
+        "\\[ r = \\sqrt{x^2 + y^2 + z^2} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Fórmula de la Sustentación",
+        "\\[ L = \\frac{1}{2} \\rho V^2 S C_L \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Fórmula del Cohete de Tsiolkovsky",
+        "\\[ \\Delta v = v_e \\ln \\frac{m_0}{m_f} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Laplace para la Transformación de Datos",
+        "\\[ F(s) = \\int_0^\\infty e^{-st} f(t) \\,dt \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Lambert para la Transferencia Orbital",
+        "\\[ \\theta = 2 \\arctan \\left( \\sqrt{\\frac{1-e}{1+e}} \\tan \\frac{E}{2} \\right) \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación del Consumo Específico de Combustible",
+        "\\[ C = \\frac{F}{P} \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Fórmula de Filtro de Kalman",
+        "Predicción:\n\\[\n\\begin{align*}\n\\hat{x}_{k|k-1} & = A \\hat{x}_{k-1|k-1} + B u_k \\\\\nP_{k|k-1} & = A P_{k-1|k-1} A^T + Q\n\\end{align*}\n\\]\nActualización:\n\\[\n\\begin{align*}\nK_k & = P_{k|k-1} H^T \\left( H P_{k|k-1} H^T + R \\right)^{-1} \\\\\n\\hat{x}_{k|k} & = \\hat{x}_{k|k-1} + K_k \\left( z_k - H \\hat{x}_{k|k-1} \\right) \\\\\nP_{k|k} & = \\left( I - K_k H \\right) P_{k|k-1}\n\\end{align*}\n\\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ],
+    [
+        "Ecuación de Schrödinger",
+        "\\[ i\\hbar \\frac{\\partial}{\\partial t}\\Psi(r,t) = [-\\frac{\\hbar^2}{2\\mu}\\nabla^2 + V(r,t)]\\Psi(r,t) \\]",
+        "Descripción pendiente\n\n",
+        "https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem"
+    ]
+]
