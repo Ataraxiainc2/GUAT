@@ -103,21 +103,22 @@
         fetch('https://raw.githubusercontent.com/Ataraxiainc2/GUAT/main/formulas.json')
             .then(response => response.json())
             .then(data => {
+                console.log(data);
                 const container = document.getElementById('formulas-container');
-        data.forEach(item => {
-            const title = item[0];
-            const formula = item[1];
-            const tooltip = item[2];
-            const url = item[3];
+                data.forEach(row => {
+                    const title = row['BL']; // Asume que el título está en la columna BL
+                    const formula = row['BM']; // Asume que la fórmula está en la columna BM
+                    const tooltip = row['BN']; // Asume que la descripción está en la columna BN
+                    const url = 'https://en.wikipedia.org/wiki/Shannon%E2%80%93Hartley_theorem'; // URL, puedes modificarla según tus necesidades
                     const formulaDiv = document.createElement('div');
                     formulaDiv.className = 'formula';
                     formulaDiv.innerHTML = `
-                                <h2>${title}</h2>
-                                <div class="tooltip-container">
-                                    <a href="${url}" target="_blank" class="tooltip-trigger">${formula}</a>
-                                    <div class="tooltip-content">${tooltip.replace(/\n/g, '<br>')}</div>
-                                </div>
-                            `;
+                            <h2>${title}</h2>
+                            <div class="tooltip-container">
+                                <a href="${url}" target="_blank" class="tooltip-trigger">${formula}</a>
+                                <div class="tooltip-content">${tooltip.replace(/\n/g, '<br>')}</div>
+                            </div>
+                        `;
                     container.appendChild(formulaDiv);
                 });
                 MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
