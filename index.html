@@ -22,27 +22,28 @@
         }
 
         #formula-button {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        background-color: #1da1f2;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 16px;
-        cursor: pointer;
-        border-radius: 5px;
-    }
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: #1da1f2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
 
-    #formula-button:hover {
-        background-color: #1089bf;
-    }
+            #formula-button:hover {
+                background-color: #1089bf;
+            }
     </style>
 </head>
 <body>
+    <div id="tooltip" style="position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
     <a href="Formulas.html" target="_blank" style="position: absolute; top: 10px; left: 10px; padding: 10px; background-color: #1da1f2; color: white; text-decoration: none; border-radius: 5px;">Ver Fórmulas</a>
     <div id="chart-container">
     </div>
@@ -52,7 +53,7 @@
         let windowHeight = window.innerHeight;
 
         //La fuente inicial toma en cuenta el tamaño de la ventana usada
-        let baseFontSize = Math.min(windowWidth, windowHeight) * 0.011;
+        let baseFontSize = Math.min(windowWidth, windowHeight) * 0.016;
 
         // Carga de datos y creación de la visualización
         d3.json("https://raw.githubusercontent.com/Ataraxiainc2/C-H-N/master/source/repos/Formula%20de%20la%20calidada%20del%20software/Formula%20de%20la%20calidada%20del%20software/datos.json").then(function (data) {
@@ -119,18 +120,25 @@
                     .attr("transform", d => `translate(${source.y0},${source.x0})`)
                     .attr("fill-opacity", 0)
                     .attr("stroke-opacity", 0)
-                    .on("click", function (event, d) {
-                        if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
-                            if (d.children) {
-                                d._children = d.children;
-                                d.children = null;
-                            } else {
-                                d.children = d._children;
-                                d._children = null;
-                            }
-                            update(d);
-                        }
-                    });
+            .on("click", function (event, d) {
+                if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
+
+                    // Oculta el tooltip anterior
+                    hideTooltip();
+
+                    // Muestra el nuevo tooltip con el texto de la etiqueta
+                    showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
+
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    update(d);
+                }
+            });
 
                 nodeEnter.append("circle")
                     .attr("r", d => 5 / (1 + 1 * d.depth))
@@ -170,12 +178,21 @@
                         }
 
                         let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
-                        fontSize = fontSize * (1 - 0.05 * d.depth);
+                        fontSize = fontSize * (1 - 0.04 * d.depth);
                         fontSize = Math.max(fontSize, 2);
                         return fontSize + "px";
+
+
                     });
 
-                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.011;
+        // Añade el manejador de eventos de clic aquí
+        text.on("click", function (event, d) {
+            showTooltip(d.data.name, d.data.color || "white", event); // pasa el color como segundo argumento
+        });
+
+
+
+                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.016;
                 text
                     .on("mouseenter", function (event, d) {
                         d3.select(this).style("font-size", hoverFontSize + "px");
@@ -300,6 +317,22 @@
             }
             update(root);
 
+
+    function showTooltip(text, color, event) {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.left = '0px'; // posición fija en x en la parte izquierda
+        tooltip.style.bottom = '0px'; // posición fija en y en la parte inferior
+        tooltip.style.display = 'block';
+        tooltip.style.backgroundColor = color; // establece el color de fondo
+        tooltip.innerHTML = text;
+    }
+
+    function hideTooltip() {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.display = 'none';
+    }
+
+
             document.getElementById("chart-container").appendChild(svg.node());
 
             window.addEventListener("resize", function () {
@@ -311,7 +344,7 @@
             fetch('/datos')
                 .then(response => response.json())
         }).catch(function (error) {
-        });
+});
     </script>
 </body>
 </html>
