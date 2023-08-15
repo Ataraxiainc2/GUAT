@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+    <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          tex2jax: {inlineMath: [['\\(','\\)']], displayMath: [['\\[','\\]']], processEscapes: true}
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Comfortaa', cursive;
+            margin: 20px;
+            color: greenyellow;
+            background-color: #1a1a1a; /* Fondo oscuro */
+            line-height: 1.6;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        h1 {
+            color: #1da1f2;
+            text-align: center; /* Centra el texto horizontalmente */
+            user-select: text;
+        }
+
+        h2 {
+            color: #1da1f2; /* Color azul de Twitter */
+            font-size: 20px; /* Tamaño de fuente un poco menor, ajústalo según tus necesidades */
+            user-select: text;
+        }
+
+        .tooltip-container {
+            position: relative;
+        }
+
+        .tooltip-trigger {
+            cursor: pointer;
+            font-size: 24px;
+            text-decoration: none;
+        }
+
+        .tooltip-content {
+            display: none;
+            position: relative;
+            background-color: #1a1a1a; /* Color de fondo azul de Twitter */
+            color: #ff6600; /* Texto blanco */
+            border: 1px solid #FFA726; /* Borde naranja */
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 10px; /* Espaciado interno */
+            width: auto; /* Ancho del tooltip */
+            border-radius: 5px; /* Bordes redondeados */
+            font-size: 16px; /* Tamaño de fuente más pequeño para el contenido del tooltip */
+        }
+
+            .tooltip-content ul {
+                margin-left: 16px;
+                list-style-type: disc; /* Viñetas para la lista */
+            }
+
+            .tooltip-content li {
+                margin-bottom: 5px;
+            }
+
+        .tooltip-container:hover .tooltip-content {
+            display: block;
+        }
+
+        .tooltip-content .math-variable {
+            font-size: 20px; /* Ajusta este valor según tus necesidades */
+        }
+
+        .formula {
+            margin-bottom: 30px; /* Espacio entre las fórmulas */
+        }
+
+            .formula .tooltip-trigger {
+                color: #ff6600; /* Color naranja brillante */
+                font-size: 24px; /* Tamaño de fuente más grande para la fórmula */
+            }
+
+        .instruction {
+            font-size: 14px; /* Ajusta el tamaño de fuente según tus preferencias */
+            color: #a0a0a0; /* Color más claro para indicar que es una nota o instrucción */
+            text-align: center; /* Centra el texto horizontalmente */
+            margin: 10px 0; /* Espacio arriba y abajo del párrafo */
+        }
+    </style>
+    <title>Fórmulas</title>
+</head>
+<body>
+    <h1>FÓRMULAS RELACIONADAS CON LAS CLASES</h1>
+    <p class="instruction">
+        Cada fórmula presentada en esta página debería estar vinculada a una aplicación creada por el estudiante. Al hacer clic en la fórmula, se abrirá una increíble aplicación que demuestra su aplicación práctica. Explora y disfruta del ingenio y la creatividad detrás de cada fórmula.
+    </p>
+    <div id="formulas-container"></div>
+    <script>
+        fetch('formulas.json')
+            .then(response => response.json())
+            .then(data => {
+                const container = document.getElementById('formulas-container');
+                data.forEach(item => {
+                    const { title, formula, tooltip, url } = item;
+                    const formulaDiv = document.createElement('div');
+                    formulaDiv.className = 'formula';
+                    formulaDiv.innerHTML = `
+                                <h2>${title}</h2>
+                                <div class="tooltip-container">
+                                    <a href="${url}" target="_blank" class="tooltip-trigger">${formula}</a>
+                                    <div class="tooltip-content">${tooltip.replace(/\n/g, '<br>')}</div>
+                                </div>
+                            `;
+                    container.appendChild(formulaDiv);
+                });
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+            });
+    </script>
+</body>
+</html>
