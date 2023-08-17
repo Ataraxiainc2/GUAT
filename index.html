@@ -2,6 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Visualización de Datos con D3.js</title>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
@@ -43,8 +44,11 @@
     </style>
 </head>
 <body>
-    <div id="tooltip" style="position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
-    <a href="Formulas.html" target="_blank" style="position: absolute; top: 10px; left: 10px; padding: 10px; background-color: #1da1f2; color: white; text-decoration: none; border-radius: 5px;">Ver Fórmulas</a>
+    <div id="tooltip" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
+    <div id="tooltip-prompt" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
+    <div id="tooltip-text" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
+    <div id="tooltip-podcast" style="position: absolute; display: none; padding: 0px; font-size: 12px; background-color: #15202B; color: #15202B; border-radius: 2px; left: 0px; bottom: 0px;"></div>
+    <a href="Formulas.html" target="_blank" style="position: absolute; top: 2px; left: 2px; padding: 5px; background-color: darkgreen; color: white; text-decoration: none; border-radius: 5px;">Ver Fórmulas</a>
     <div id="chart-container">
     </div>
     <script>
@@ -56,11 +60,11 @@
         let baseFontSize = Math.min(windowWidth, windowHeight) * 0.016;
 
         // Carga de datos y creación de la visualización
-        d3.json("https://raw.githubusercontent.com/Ataraxiainc2/GUAT/main/index.json").then(function (data) {
+        d3.json("/static/datos.json").then(function (data) {
             const padding = 2;
             const width = document.documentElement.clientWidth - 2 * padding;
             const height = document.documentElement.clientHeight - 2 * padding;
-            const margin = { top: padding, right: 500, bottom: padding, left: padding };
+            const margin = { top: padding, right: padding + 400, bottom: padding, left: padding };
 
             let root = d3.hierarchy(data);
             const tree = d3.tree()
@@ -120,25 +124,36 @@
                     .attr("transform", d => `translate(${source.y0},${source.x0})`)
                     .attr("fill-opacity", 0)
                     .attr("stroke-opacity", 0)
-            .on("click", function (event, d) {
-                if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
+                    .on("click", function (event, d) {
+                        if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
 
-                    // Oculta el tooltip anterior
-                    hideTooltip();
+                            // Oculta el tooltip anterior
+                            hideTooltip();
 
-                    // Muestra el nuevo tooltip con el texto de la etiqueta
-                    showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
+                            if (d.depth === 6 && d.data.urls) {
+                                // Extract the URLs
+                                const urls = d.data.urls.split(", ");
+                                // Show additional tooltips if URLs are present
+                                if (urls.length >= 3) {
+                                    showAdditionalTooltip('tooltip-prompt', 'Prompts usados', urls[0], d.data.color, 'bottom-right', '70px');
+                                    showAdditionalTooltip('tooltip-text', 'Lectura en texto', urls[1], d.data.color, 'bottom-right', '35px'); // Ajusta este valor según el tamaño de los tooltips
+                                    showAdditionalTooltip('tooltip-podcast', 'Clase en Podcast: ', urls[2]);
+                                }
+                            }
 
-                    if (d.children) {
-                        d._children = d.children;
-                        d.children = null;
-                    } else {
-                        d.children = d._children;
-                        d._children = null;
-                    }
-                    update(d);
-                }
-            });
+                            // Muestra el nuevo tooltip con el texto de la etiqueta
+                            showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
+
+                            if (d.children) {
+                                d._children = d.children;
+                                d.children = null;
+                            } else {
+                                d.children = d._children;
+                                d._children = null;
+                            }
+                            update(d);
+                        }
+                    });
 
                 nodeEnter.append("circle")
                     .attr("r", d => 5 / (1 + 1 * d.depth))
@@ -179,16 +194,16 @@
 
                         let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
                         fontSize = fontSize * (1 - 0.04 * d.depth);
-                        fontSize = Math.max(fontSize, 2);
+                        fontSize = Math.max(fontSize, 5);
                         return fontSize + "px";
 
 
                     });
 
-        // Añade el manejador de eventos de clic aquí
-        text.on("click", function (event, d) {
-            showTooltip(d.data.name, d.data.color || "white", event); // pasa el color como segundo argumento
-        });
+                // Añade el manejador de eventos de clic aquí
+                text.on("click", function (event, d) {
+                    showTooltip(d.data.name, d.data.color || "white", event); // pasa el color como segundo argumento
+                });
 
 
 
@@ -219,7 +234,7 @@
 
                             let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
                             fontSize = fontSize * (1 - 0.05 * d.depth);
-                            fontSize = Math.max(fontSize, 2);
+                            fontSize = Math.max(fontSize, 5);
                             return fontSize + "px";
                         });
                     });
@@ -240,9 +255,9 @@
                                 xPosition -= textLength + 15;  // mover el texto a la izquierda por su ancho
                             }
 
-                            // si el nodo se ha expandido y está en la tercera jerarquía, ajusta la posición x moviéndolo 200 unidades hacia la izquierda
+                            // si el nodo se ha expandido y está en la tercera jerarquía, ajusta la posición x moviéndolo 300 unidades hacia la izquierda
                             if (d.children != null && d.depth == 3) {
-                                xPosition -= 200;  // mover el texto a la izquierda por 200 unidades
+                                xPosition -= 300;  // mover el texto a la izquierda por 300 unidades
                             }
 
                             return xPosition;
@@ -318,19 +333,41 @@
             update(root);
 
 
-    function showTooltip(text, color, event) {
-        const tooltip = document.getElementById('tooltip');
-        tooltip.style.left = '0px'; // posición fija en x en la parte izquierda
-        tooltip.style.bottom = '0px'; // posición fija en y en la parte inferior
-        tooltip.style.display = 'block';
-        tooltip.style.backgroundColor = color; // establece el color de fondo
-        tooltip.innerHTML = text;
-    }
+            function showAdditionalTooltip(tooltipId, text, url, color, position = 'default', verticalOffset = '10px') {
+                const tooltip = document.getElementById(tooltipId);
 
-    function hideTooltip() {
-        const tooltip = document.getElementById('tooltip');
-        tooltip.style.display = 'none';
-    }
+                if (position === 'bottom-right') {
+                    tooltip.style.right = '0%';
+                    tooltip.style.transform = 'translateX(0%)';
+                    tooltip.style.bottom = verticalOffset;
+                }
+
+                tooltip.style.display = 'block';
+                tooltip.style.backgroundColor = color;
+
+                // Comprobar si la URL es de Spotify y mostrar un iFrame embebido
+                if (url && url.includes("spotify.com")) {
+                    tooltip.innerHTML = '<iframe allow="encrypted-media *" style="border-radius:0px" src="' + url + '" width="100%" height="100" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
+                } else {
+                    tooltip.innerHTML = '<a href="' + url + '" target="_blank">' + text + '</a>';
+                }
+            }
+
+            function showTooltip(text, color, event) {
+                const tooltip = document.getElementById('tooltip');
+                tooltip.style.right = '0px'; // posición fija en x en la parte izquierda
+                tooltip.style.bottom = '0px'; // posición fija en y en la parte inferior
+                tooltip.style.display = 'block';
+                tooltip.style.backgroundColor = color; // establece el color de fondo
+                tooltip.innerHTML = text;
+            }
+
+            function hideTooltip() {
+                document.getElementById('tooltip').style.display = 'none';
+                document.getElementById('tooltip-prompt').style.display = 'none';
+                document.getElementById('tooltip-text').style.display = 'none';
+                document.getElementById('tooltip-podcast').style.display = 'none';
+            }
 
 
             document.getElementById("chart-container").appendChild(svg.node());
@@ -341,10 +378,34 @@
                 // Actualiza el tamaño del gráfico aquí
             });
 
-            fetch('/datos')
-                .then(response => response.json())
+            //fetch('/datos')
+            //  .then(response => response.json())
         }).catch(function (error) {
-});
+            // Calcular el ancho máximo del texto
+            let maxTextWidth = 0;
+            const textNodes = textGroup.selectAll("text");
+
+            textNodes.each(function () {
+                const textWidth = this.getComputedTextLength();
+                if (textWidth > maxTextWidth) {
+                    maxTextWidth = textWidth;
+                }
+            });
+
+            // Ajustar el margen derecho en función del ancho máximo del texto
+            const newRightMargin = maxTextWidth + padding; // Puedes ajustar el padding según lo necesites
+
+            // Actualizar el objeto de márgenes
+            const margin = { top: padding, right: newRightMargin, bottom: padding, left: padding };
+
+            // Actualizar el ancho y el alto del SVG
+            const width = document.documentElement.clientWidth - margin.left - margin.right;
+            const height = document.documentElement.clientHeight - margin.top - margin.bottom;
+
+            // Actualizar el atributo del SVG
+            svg.attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom);
+        });
     </script>
 </body>
 </html>
