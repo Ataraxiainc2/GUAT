@@ -60,7 +60,7 @@
         let baseFontSize = Math.min(windowWidth, windowHeight) * 0.016;
 
         // Carga de datos y creación de la visualización
-        d3.json("/static/datos.json").then(function (data) {
+        d3.json("/static/index.json").then(function (data) {
             const padding = 2;
             const width = document.documentElement.clientWidth - 2 * padding;
             const height = document.documentElement.clientHeight - 2 * padding;
