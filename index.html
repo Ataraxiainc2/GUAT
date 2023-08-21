@@ -2,9 +2,9 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Visualización de Datos con D3.js</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap">
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js"></script>
     <style>
@@ -14,12 +14,24 @@
             color: #FFFFFF;
             margin: 0;
             padding: 0;
-            user-select: none
+            user-select: none;
         }
 
         #chart-container {
             width: 100%;
             height: 100%;
+        }
+
+        .tooltip {
+            font-family: 'Rubik Mono One';
+            position: absolute;
+            display: none;
+            padding: 5px;
+            font-size: 18px;
+            background-color: white;
+            color: #15202B;
+            border: 1px solid black;
+            border-radius: 5px;
         }
 
         #formula-button {
@@ -41,371 +53,398 @@
             #formula-button:hover {
                 background-color: #1089bf;
             }
+            .tooltip-podcast {
+    position: absolute;
+    display: none;
+    padding: 0px;
+    font-size: 12px;
+    background-color: #15202B;
+    color: #15202B;
+    border-radius: 2px;
+    left: 0px;
+    bottom: 0px;
+}
+
+.link-to-formulas {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    padding: 5px;
+    background-color: darkgreen;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
     </style>
 </head>
 <body>
-    <div id="tooltip" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
-    <div id="tooltip-prompt" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
-    <div id="tooltip-text" style="font-family: 'Rubik Mono One';position: absolute; display: none; padding: 5px; font-size: 18px; background-color: white; color: #15202B; border: 1px solid black; border-radius: 5px;"></div>
+    <div id="tooltip" class="tooltip"></div>
+    <div id="tooltip-prompt" class="tooltip"></div>
+    <div id="tooltip-text" class="tooltip"></div>
     <div id="tooltip-podcast" style="position: absolute; display: none; padding: 0px; font-size: 12px; background-color: #15202B; color: #15202B; border-radius: 2px; left: 0px; bottom: 0px;"></div>
     <a href="Formulas.html" target="_blank" style="position: absolute; top: 2px; left: 2px; padding: 5px; background-color: darkgreen; color: white; text-decoration: none; border-radius: 5px;">Ver Fórmulas</a>
-    <div id="chart-container">
-    </div>
+    <div id="chart-container"></div>
     <script>
-        // Obtener el tamaño de la pantalla
-        let windowWidth = window.innerWidth;
-        let windowHeight = window.innerHeight;
+// Obtener el tamaño de la pantalla
+let windowWidth = window.innerWidth;
+let windowHeight = window.innerHeight;
 
-        //La fuente inicial toma en cuenta el tamaño de la ventana usada
-        let baseFontSize = Math.min(windowWidth, windowHeight) * 0.016;
+// La fuente inicial toma en cuenta el tamaño de la ventana usada
+let baseFontSize = Math.min(windowWidth, windowHeight) * 0.020;
 
-        // Carga de datos y creación de la visualización
-        d3.json("https://raw.githubusercontent.com/Ataraxiainc2/GUAT/main/index.json").then(function (data) {
-            const padding = 2;
-            const width = document.documentElement.clientWidth - 2 * padding;
-            const height = document.documentElement.clientHeight - 2 * padding;
-            const margin = { top: padding, right: padding + 400, bottom: padding, left: padding };
+// Carga de datos y creación de la visualización
+d3.json("https://raw.githubusercontent.com/Ataraxiainc2/GUAT/main/index.json").then(function (data) {
+    const padding = 2;
+    const width = document.documentElement.clientWidth - 2 * padding;
+    const height = document.documentElement.clientHeight - 2 * padding;
+    const margin = { top: padding, right: 500, bottom: padding, left: padding };
+    let root = d3.hierarchy(data);
 
-            let root = d3.hierarchy(data);
-            const tree = d3.tree()
-                .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
-                .separation((a, b) => {
-                    let separation = (a.parent === b.parent ? 1 : 2) / a.depth;
-                    return separation * 0.1;  // incrementar el factor de separación
-                });
+    let nodeId = 0;
+    root.each(d => {
+        d.id = nodeId++;
+    });
 
-            tree(root);
-
-            root.descendants().forEach(node => {
-                node.x0 = node.x;
-                node.y0 = node.y;
-                if (node.depth > -0) {
-                    if (node.children) {
-                        node._children = node.children;
-                        node.children = null;
-                    }
-                }
-            });
-
-            const svg = d3.create("svg")
-                .attr("width", width)
-                .attr("height", height)
-                .call(d3.zoom().on("zoom", function (event) {
-                    linkGroup.attr("transform", event.transform);
-                    nodeGroup.attr("transform", event.transform);
-                    textGroup.attr("transform", event.transform);
-                }));
-
-            const linkGroup = svg.append("g")
-                .attr("fill", "none")
-                .attr("transform", `translate(0,${margin.top})`);
-
-            const nodeGroup = svg.append("g")
-                .attr("transform", `translate(0,${margin.top})`);
-
-            const textGroup = svg.append("g")
-                .attr("stroke-linejoin", "round")
-                .attr("stroke-width", 2)
-                .style("font", "16px 'Arial', monospace")
-                .attr("transform", `translate(0,${margin.top})`);
-
-            function update(source) {
-                const duration = d3.event && d3.event.altKey ? 2500 : 250;
-                const treeData = tree(root);
-                root.eachBefore(d => {
-                    d.x0 = d.x;
-                    d.y0 = d.y;
-                });
-
-                const node = nodeGroup.selectAll("g")
-                    .data(treeData.descendants(), d => d.id);
-
-                const nodeEnter = node.enter().append("g")
-                    .attr("transform", d => `translate(${source.y0},${source.x0})`)
-                    .attr("fill-opacity", 0)
-                    .attr("stroke-opacity", 0)
-                    .on("click", function (event, d) {
-                        if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
-
-                            // Oculta el tooltip anterior
-                            hideTooltip();
-
-                            if (d.depth === 6 && d.data.urls) {
-                                // Extract the URLs
-                                const urls = d.data.urls.split(", ");
-                                // Show additional tooltips if URLs are present
-                                if (urls.length >= 3) {
-                                    showAdditionalTooltip('tooltip-prompt', 'Prompts usados', urls[0], d.data.color, 'bottom-right', '70px');
-                                    showAdditionalTooltip('tooltip-text', 'Lectura en texto', urls[1], d.data.color, 'bottom-right', '35px'); // Ajusta este valor según el tamaño de los tooltips
-                                    showAdditionalTooltip('tooltip-podcast', 'Clase en Podcast: ', urls[2]);
-                                }
-                            }
-
-                            // Muestra el nuevo tooltip con el texto de la etiqueta
-                            showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
-
-                            if (d.children) {
-                                d._children = d.children;
-                                d.children = null;
-                            } else {
-                                d.children = d._children;
-                                d._children = null;
-                            }
-                            update(d);
-                        }
-                    });
-
-                nodeEnter.append("circle")
-                    .attr("r", d => 5 / (1 + 1 * d.depth))
-                    .attr("fill", d => d.data.color || "white");
-
-                const text = nodeEnter.append("text")
-                    .attr("dy", function (d) {
-                        // si el nodo no se ha expandido, centrar el texto
-                        if (d.children == null) {
-                            return "0.3em";  // ajustar este valor para centrar el texto
-                        }
-                        // si el nodo se ha expandido, colocar el texto arriba
-                        else {
-                            return "-0.2em";
-                        }
-                    })
-                    .attr("x", 5)  // inicialmente, alinear el texto a la derecha del nodo
-                    .text(d => d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""))  // Aquí se añaden las notas después de cada etiqueta
-                    .attr("fill", d => d.data.color || "white")
-                    .attr("stroke-linejoin", "round")
-                    .attr("stroke-width", 3)
-                    .attr("stroke", "none")
-                    .style("font-size", function (d) {
-                        let bbox = this.getBBox();
-                        let textWidth = bbox.width;
-                        let textHeight = bbox.height;
-                        let availableWidth = width - d.y;
-                        let siblingDistance = Infinity;
-
-                        if (d.parent) {
-                            let nodeIndex = d.parent.children.indexOf(d);
-                            if (nodeIndex < d.parent.children.length - 1) {
-                                siblingDistance = d.parent.children[nodeIndex + 1].x - d.x;
-                            } else if (nodeIndex > 0) {
-                                siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
-                            }
-                        }
-
-                        let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
-                        fontSize = fontSize * (1 - 0.04 * d.depth);
-                        fontSize = Math.max(fontSize, 5);
-                        return fontSize + "px";
-
-
-                    });
-
-                // Añade el manejador de eventos de clic aquí
-                text.on("click", function (event, d) {
-                    showTooltip(d.data.name, d.data.color || "white", event); // pasa el color como segundo argumento
-                });
-
-
-
-                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.016;
-                text
-                    .on("mouseenter", function (event, d) {
-                        d3.select(this).style("font-size", hoverFontSize + "px");
-                    })
-                    .on('mouseleave', function (d) {
-                        d3.select(this).attr('stroke', 'none');
-                    })
-                    .on("mouseleave", function (d) {
-                        d3.select(this).style("font-size", function (d) {
-                            let bbox = this.getBBox();
-                            let textWidth = bbox.width;
-                            let textHeight = bbox.height;
-                            let availableWidth = width - d.y;
-                            let siblingDistance = Infinity;
-
-                            if (d.parent) {
-                                let nodeIndex = d.parent.children.indexOf(d);
-                                if (nodeIndex < d.parent.children.length - 1) {
-                                    siblingDistance = d.parent.children[nodeIndex + 1].x - d.x;
-                                } else if (nodeIndex > 0) {
-                                    siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
-                                }
-                            }
-
-                            let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
-                            fontSize = fontSize * (1 - 0.05 * d.depth);
-                            fontSize = Math.max(fontSize, 5);
-                            return fontSize + "px";
-                        });
-                    });
-                const nodeUpdate = node.merge(nodeEnter).transition().duration(duration)
-                    .attr("fill-opacity", 1)
-                    .attr("stroke-opacity", 1)
-                    .attr("transform", d => `translate(${d.y},${d.x})`)
-                    .end().then(() => {
-                        node.attr("transform", d => `translate(${d.y},${d.x})`);
-
-                        text.attr("x", function (d) {
-                            let text = this;
-                            let textLength = text.getComputedTextLength();
-                            let xPosition = 5;  // posición inicial a la derecha del nodo
-
-                            // si el nodo se ha expandido y no está en la tercera jerarquía, ajusta la posición x para que el final del texto coincida con el inicio del nodo
-                            if (d.children != null && d.depth != 3) {
-                                xPosition -= textLength + 15;  // mover el texto a la izquierda por su ancho
-                            }
-
-                            // si el nodo se ha expandido y está en la tercera jerarquía, ajusta la posición x moviéndolo 300 unidades hacia la izquierda
-                            if (d.children != null && d.depth == 3) {
-                                xPosition -= 300;  // mover el texto a la izquierda por 300 unidades
-                            }
-
-                            return xPosition;
-                        });
-                    });
-
-                const nodeExit = node.exit()
-                    .attr("fill-opacity", 0)
-                    .attr("stroke-opacity", 0)
-                    .transition().duration(duration)
-                    .remove();
-
-                const link = linkGroup.selectAll("path")
-                    .data(treeData.links(), d => d.target.id);
-
-                const linkEnter = link.enter().append("path")
-                    .attr("fill", "none")
-                    .attr("stroke", d => d.target.data.color || "#808080")
-                    .attr("stroke-opacity", 0.4)
-                    .attr("stroke-width", 1.5)
-                    .attr("d", d => {
-                        const o = { x: source.x0, y: source.y0 };
-                        return d3.linkHorizontal()
-                            .x(d => d.y)
-                            .y(d => d.x)({ source: o, target: o });
-                    });
-
-
-                const linkUpdate = link.merge(linkEnter).transition().duration(duration)
-                    .attr("d", d => {
-                        return d3.linkHorizontal()
-                            .x(d => d.y)
-                            .y(d => d.x)(d);
-                    });
-
-                const linkExit = link.exit()
-                    .transition().duration(duration)
-                    .attr("d", d => {
-                        const o = { x: source.x, y: source.y };
-                        return d3.linkHorizontal()
-                            .x(d => d.y)
-                            .y(d => d.x)({ source: o, target: o });
-                    })
-                    .remove();
-
-                // Para los enlaces que se actualizan
-                link.merge(linkEnter).transition().duration(duration)
-                    .attr("d", function (d) {
-                        if (isNaN(d.source.x) || isNaN(d.source.y) || isNaN(d.target.x) || isNaN(d.target.y)) {
-                            return "M0,0";  // Esto dibujará una línea en la posición (0,0) en lugar de fallar
-                        }
-                        return d3.linkHorizontal()
-                            .x(d => d.y)
-                            .y(d => d.x)(d);
-                    });
-
-                link.exit().transition().duration(duration).remove()
-                    .attr("d", d => {
-                        if (isNaN(source.x) || isNaN(source.y)) {
-                            console.log('Invalid source:', source);
-                            return;
-                        }
-                        const o = { x: source.x, y: source.y };
-                        return d3.linkHorizontal()
-                            .x(d => d.y)
-                            .y(d => d.x)(d);
-                    })
-                root.eachBefore(d => {
-                    d.x0 = d.x;
-                    d.y0 = d.y;
-                });
-            }
-            update(root);
-
-
-            function showAdditionalTooltip(tooltipId, text, url, color, position = 'default', verticalOffset = '10px') {
-                const tooltip = document.getElementById(tooltipId);
-
-                if (position === 'bottom-right') {
-                    tooltip.style.right = '0%';
-                    tooltip.style.transform = 'translateX(0%)';
-                    tooltip.style.bottom = verticalOffset;
-                }
-
-                tooltip.style.display = 'block';
-                tooltip.style.backgroundColor = color;
-
-                // Comprobar si la URL es de Spotify y mostrar un iFrame embebido
-                if (url && url.includes("spotify.com")) {
-                    tooltip.innerHTML = '<iframe allow="encrypted-media *" style="border-radius:0px" src="' + url + '" width="100%" height="100" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>';
-                } else {
-                    tooltip.innerHTML = '<a href="' + url + '" target="_blank">' + text + '</a>';
-                }
-            }
-
-            function showTooltip(text, color, event) {
-                const tooltip = document.getElementById('tooltip');
-                tooltip.style.right = '0px'; // posición fija en x en la parte izquierda
-                tooltip.style.bottom = '0px'; // posición fija en y en la parte inferior
-                tooltip.style.display = 'block';
-                tooltip.style.backgroundColor = color; // establece el color de fondo
-                tooltip.innerHTML = text;
-            }
-
-            function hideTooltip() {
-                document.getElementById('tooltip').style.display = 'none';
-                document.getElementById('tooltip-prompt').style.display = 'none';
-                document.getElementById('tooltip-text').style.display = 'none';
-                document.getElementById('tooltip-podcast').style.display = 'none';
-            }
-
-
-            document.getElementById("chart-container").appendChild(svg.node());
-
-            window.addEventListener("resize", function () {
-                const width = document.documentElement.clientWidth - 2 * padding;
-                const height = document.documentElement.clientHeight - 2 * padding;
-                // Actualiza el tamaño del gráfico aquí
-            });
-
-            //fetch('/datos')
-            //  .then(response => response.json())
-        }).catch(function (error) {
-            // Calcular el ancho máximo del texto
-            let maxTextWidth = 0;
-            const textNodes = textGroup.selectAll("text");
-
-            textNodes.each(function () {
-                const textWidth = this.getComputedTextLength();
-                if (textWidth > maxTextWidth) {
-                    maxTextWidth = textWidth;
-                }
-            });
-
-            // Ajustar el margen derecho en función del ancho máximo del texto
-            const newRightMargin = maxTextWidth + padding; // Puedes ajustar el padding según lo necesites
-
-            // Actualizar el objeto de márgenes
-            const margin = { top: padding, right: newRightMargin, bottom: padding, left: padding };
-
-            // Actualizar el ancho y el alto del SVG
-            const width = document.documentElement.clientWidth - margin.left - margin.right;
-            const height = document.documentElement.clientHeight - margin.top - margin.bottom;
-
-            // Actualizar el atributo del SVG
-            svg.attr("width", width + margin.left + margin.right)
-                .attr("height", height + margin.top + margin.bottom);
+    const tree = d3.tree()
+        .size([height - margin.top - margin.bottom, width - margin.left - margin.right])
+        .separation((a, b) => {
+            // Incrementar el factor de separación para las generaciones más profundas
+            let separationFactor = (a.parent === b.parent ? 1 : 2) / a.depth;
+            if (a.depth >= 6) separationFactor *= 1.2;
+            if (a.depth >= 7) separationFactor *= 0.5;
+            return separationFactor * 0.1;
         });
-    </script>
+
+    tree(root);
+
+    root.descendants().forEach(node => {
+        node.x0 = node.x;
+        node.y0 = node.y;
+        if (node.depth > -0) {
+            if (node.children) {
+                node._children = node.children;
+                node.children = null;
+            }
+        }
+    });
+
+    const svg = d3.create("svg")
+        .attr("width", width)
+        .attr("height", height)
+        .call(d3.zoom().on("zoom", function (event) {
+            linkGroup.attr("transform", event.transform);
+            nodeGroup.attr("transform", event.transform);
+            textGroup.attr("transform", event.transform);
+        }));
+
+    const linkGroup = svg.append("g")
+        .attr("fill", "none")
+        .attr("transform", `translate(0,${margin.top})`);
+
+    const nodeGroup = svg.append("g")
+        .attr("transform", `translate(0,${margin.top})`);
+
+    const textGroup = svg.append("g")
+        .attr("stroke-linejoin", "round")
+        .attr("stroke-width", 2)
+        .style("font", "16px 'Arial', monospace")
+        .attr("transform", `translate(0,${margin.top})`);
+
+
+    
+
+
+    function update(source) {
+        const duration = d3.event && d3.event.altKey ? 2500 : 250;
+        const treeData = tree(root);
+        root.eachBefore(d => {
+            d.x0 = d.x;
+            d.y0 = d.y;
+            d.affected = false; // Inicialmente, ningún nodo está afectado
+        });
+
+        // Marca los nodos afectados
+        function markAffectedNodes(node) {
+            node.affected = true;
+            if (node.children) {
+                node.children.forEach(markAffectedNodes);
+            }
+        }
+
+        markAffectedNodes(source); // 'source' es el nodo en el que se hizo clic
+
+        // Encuentra el nodo abuelo si existe
+        let grandParent = null;
+        if (source.parent && source.parent.parent) {
+            grandParent = source.parent.parent;
+        }
+
+        // Calcula la diferencia entre la posición y del nodo abuelo y el margen izquierdo
+        let shiftAmount = 0;
+        if (grandParent) {
+            shiftAmount = margin.left - grandParent.y;
+        }
+
+        // Aplica la diferencia a todos los nodos para mover el árbol hacia la izquierda
+        root.eachBefore(d => {
+            d.y += shiftAmount;
+            d.y0 += shiftAmount;
+        });
+
+        // Aplica un ajuste adicional de distancia horizontal entre enlaces para generaciones específicas
+        const adjustments = [0, -200, -300, -400, -50, 0, 400, 700];
+
+        root.eachBefore(d => {
+            if (d.depth < adjustments.length) {
+                d.y += adjustments[d.depth];
+            }
+        });
+
+        function wrapText(d) {
+            if (d.depth === 3) {
+                let words = d.data.name.split(" ");
+                let halfLength = Math.ceil(words.length / 2);
+                return words.slice(0, halfLength).join(" ") + "\n" + words.slice(halfLength).join(" ");
+            }
+            return d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : "");
+        }
+
+        const node = nodeGroup.selectAll("g")
+            .data(treeData.descendants(), d => d.id);
+
+        const nodeEnter = node.enter().append("g")
+            .attr("transform", d => `translate(${source.y0},${source.x0})`) // Inicialmente en la posición del padre
+            .attr("fill-opacity", 0)
+            .attr("stroke-opacity", 0)
+            .on("click", (event, d) => {
+                if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
+                    // Contraer hermanos
+                    if (d.parent) {
+                        d.parent.children.forEach(sibling => {
+                            if (sibling !== d && sibling.children) {
+                                sibling._children = sibling.children;
+                                sibling.children = null;
+                            }
+                        });
+                    }
+                    // Oculta el tooltip anterior
+                    hideTooltip();
+                    if (d.depth === 6 && d.data.urls) {
+                        // Extract the URLs
+                        const urls = d.data.urls.split(", ");
+                        // Show additional tooltips if URLs are present
+                        if (urls.length >= 3) {
+                            showAdditionalTooltip('tooltip-prompt', 'Prompts usados', urls[0], d.data.color, 'bottom-right', '70px');
+                            showAdditionalTooltip('tooltip-text', 'Lectura en texto', urls[1], d.data.color, 'bottom-right', '35px'); // Ajusta este valor según el tamaño de los tooltips
+                            showAdditionalTooltip('tooltip-podcast', 'Clase en Podcast: ', urls[2]);
+                        }
+                    }
+                    // Expandir o contraer el nodo seleccionado
+                    if (d.children) {
+                        d._children = d.children;
+                        d.children = null;
+                    } else {
+                        d.children = d._children;
+                        d._children = null;
+                    }
+                    // Muestra el nuevo tooltip con el texto de la etiqueta
+                    showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
+                    // Actualizar la visualización
+                    update(d);
+                }
+            });
+        nodeEnter.append("circle")
+            .attr("r", d => 5 / (1 + 1 * d.depth))
+            .attr("fill", d => d.data.color || "white");
+
+        const getFontSize = function (d) {
+            // Si ya hemos calculado el tamaño de fuente para este nodo, retornarlo
+            if (d.fontSize) return d.fontSize;
+
+            let bbox = this.getBBox();
+            let textWidth = bbox.width;
+            let textHeight = bbox.height;
+            let availableWidth = width - d.y;
+            let siblingDistance = Infinity;
+            if (d.parent) {
+                let nodeIndex = d.parent.children.indexOf(d);
+                if (nodeIndex < d.parent.children.length - 1) {
+                    siblingDistance = d.parent.children[nodeIndex + 1].x - d.x;
+                } else if (nodeIndex > 0) {
+                    siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
+                }
+            }
+            let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
+            fontSize = fontSize * (1 - 0.04 * d.depth);
+            fontSize = Math.max(fontSize, 12);
+
+            // Almacenar el tamaño de fuente en el nodo
+            d.fontSize = fontSize + "px";
+
+            return d.fontSize;
+        };
+
+        const text = nodeEnter.append("text")
+            .attr("dy", d => d.children == null ? "0.3em" : "-0.2em")
+            .attr("x", 5)
+            .text(wrapText) // Utiliza la función wrapText aquí
+            .attr("fill", d => d.data.color || "white")
+            .attr("stroke-linejoin", "round")
+            .attr("stroke-width", 3)
+            .attr("stroke", "none")
+            .style("font-size", getFontSize)
+            .attr("fill-opacity", 0); // Opacidad inicial en 0
+
+        // Transición para que el texto aparezca gradualmente
+        text.transition()
+            .duration(duration) // Duración de la transición (puedes ajustar este valor)
+            .attr("fill-opacity", 1);
+
+        // Añade el manejador de eventos de clic aquí
+        text.on("click", (event, d) => showTooltip(d.data.name, d.data.color || "white", event)); // pasa el color como segundo argumento
+
+        let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.020;
+        text
+            .on("mouseenter", function (event, d) {
+                d3.select(this).style("font-size", hoverFontSize + "px");
+            })
+            .on('mouseleave', function (d) {
+                d3.select(this).attr('stroke', 'none');
+            })
+            .on("mouseleave", function (d) {
+                d3.select(this).style("font-size", getFontSize);
+            });
+
+        // Transición para los nodos y texto existentes
+        const nodeUpdate = node.merge(nodeEnter)
+            .transition()
+            .duration(duration)
+            .attr("transform", d => `translate(${d.y},${d.x})`)
+            .attr("fill-opacity", 1)
+            .attr("stroke-opacity", 1);
+
+        // Actualizar la posición del texto existente
+        node.selectAll("text") // Selección de todos los textos existentes
+            .transition() // Aplicar transición
+            .duration(duration) // Duración de la transición
+            .attr("x", function (d) {
+                let text = this;
+                let textLength = text.getComputedTextLength();
+            });
+
+        // Exiting nodes will be immediately removed without transition
+        const nodeExit = node.exit()
+            .transition()
+            .duration(duration)
+            .attr("transform", d => `translate(${source.y},${source.x})`)
+            .attr("fill-opacity", 0)
+            .attr("stroke-opacity", 0)
+            .remove(); // Eliminar después de la transición
+
+        // Actualizar enlaces
+        const linksData = treeData.links();
+
+        const link = linkGroup.selectAll("path")
+            .data(linksData, d => d.target.id);
+
+        const linkEnter = link.enter().append("path")
+            .attr("fill", "none")
+            .attr("stroke", d => d.target.data.color || "#808080")
+            .attr("stroke-opacity", 0.4)
+            .attr("stroke-width", 1.5)
+            .attr("d", d => {
+                const o = { x: source.x0, y: source.y0 };
+                const path = d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x)({ source: o, target: o });
+                return path;
+            });
+
+        // Transition for entering links
+        linkEnter.transition().duration(duration)
+            .attr("d", d => {
+                return d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x)(d);
+            });
+
+        // Transition for updating links
+        link.merge(linkEnter).transition().duration(duration)
+            .attr("d", d => {
+                const path = d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x)(d);
+                return path;
+            });
+
+        link.exit()
+            .transition()
+            .duration(duration)
+            .attr("d", d => {
+                const o = { x: source.x, y: source.y };
+                return d3.linkHorizontal()
+                    .x(d => d.y)
+                    .y(d => d.x)({ source: o, target: o });
+            })
+            .attr("stroke-opacity", 0) // Reducir la opacidad a 0
+            .remove(); // Eliminar después de la transición
+
+        root.eachBefore(d => {
+            d.x0 = d.x;
+            d.y0 = d.y;
+        });
+    }
+        update(root); // Llamada a la función de actualización
+
+
+    function showAdditionalTooltip(tooltipId, text, url, color, position = 'default', verticalOffset = '10px') {
+        const tooltip = document.getElementById(tooltipId);
+        if (position === 'bottom-right') {
+            tooltip.style.right = '0%';
+            tooltip.style.transform = 'translateX(0%)';
+            tooltip.style.bottom = verticalOffset;
+        }
+        tooltip.style.display = 'block';
+        tooltip.style.backgroundColor = color;
+
+        // Comprobar si la URL es de Spotify y mostrar un iFrame embebido
+        if (url && url.includes("spotify.com")) {
+            tooltip.innerHTML = `<iframe allow="encrypted-media *" style="border-radius:0px" src="${url}" width="100%" height="100" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        } else {
+            tooltip.innerHTML = `<a href="${url}" target="_blank">${text}</a>`;
+        }
+    }
+
+    function showTooltip(text, color, event) {
+        const tooltip = document.getElementById('tooltip');
+        tooltip.style.right = '0px'; // posición fija en x en la parte izquierda
+        tooltip.style.bottom = '0px'; // posición fija en y en la parte inferior
+        tooltip.style.display = 'block';
+        tooltip.style.backgroundColor = color; // establece el color de fondo
+        tooltip.innerHTML = text;
+    }
+
+    function hideTooltip() {
+        // Selecciona todos los elementos con la clase "tooltip"
+        const tooltips = document.querySelectorAll('.tooltip');
+
+        // Itera sobre cada tooltip y cambia su estilo para ocultarlo
+        tooltips.forEach(tooltip => {
+            tooltip.style.display = 'none';
+        });
+    }
+
+    document.getElementById("chart-container").appendChild(svg.node());
+
+    window.addEventListener("resize", function () {
+        const width = document.documentElement.clientWidth - 2 * padding;
+        const height = document.documentElement.clientHeight - 2 * padding;
+        // Actualiza el tamaño del gráfico aquí
+    });
+
+    //fetch('/datos')
+    //  .then(response => response.json())
+}).catch(function (error) { });
+</script>
 </body>
 </html>
