@@ -464,5 +464,14 @@
             //  .then(response => response.json())
         }).catch(function (error) { });
     </script>
+    <script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('ServiceWorkerw.js').then(() => {
+      console.log('Service Worker registrado exitosamente');
+    }).catch((error) => {
+      console.error('Fallo al registrar el Service Worker:', error);
+    });
+  }
+</script>
 </body>
 </html>
