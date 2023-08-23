@@ -420,7 +420,7 @@
                 // Validación de la URL usando una expresión regular
                 var spotifyPattern = /https:\/\/open\.spotify\.com\/embed\/\w+\/\w+/;
                 if (url && spotifyPattern.test(url)) {
-                    tooltip.innerHTML = `<iframe allow="encrypted-media *" style="border-radius:0px" src="${url}" width="100%" height="100" frameBorder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+                    tooltip.innerHTML = `<iframe allow="encrypted-media *" style="border-radius:0px" src="${url}" width="300" height="380" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>`;
                 } else {
                     // Escapar el texto para prevenir ataques de inyección
                     var anchor = document.createElement('a');
