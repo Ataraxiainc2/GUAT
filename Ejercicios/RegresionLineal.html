@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Aboreto&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share&Tech&Mono&display=swap">
+    <link rel="stylesheet" href="{{ url_for('static', filename='RegresionLineal.css') }}">
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <title>Regresión Lineal Interactiva</title>
+    <style>
+        body {
+            user-select: none;
+            background-color: #15202B;
+            color: yellowgreen;
+            font-family: 'Aboreto', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Oculta la barra de desplazamiento */
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            height: 100vh; /* Asegura que el contenedor ocupe toda la altura de la ventana */
+        }
+
+        #plot {
+            width: 100%;
+            height: 100vh;
+        }
+
+        #controls {
+            position: absolute;
+            right: 10px;
+            bottom: 10px; /* Ajustar según la posición deseada */
+        }
+
+
+        .tooltip {
+            position: absolute;
+            padding: 5px;
+            border: 1px solid black;
+            border-radius: 5px;
+            pointer-events: none; /* Para que no interfiera con los eventos del ratón */
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+        }
+
+        #formula {
+            position: absolute;
+            bottom: 70px; /* Puedes ajustar este valor para cambiar la distancia desde la parte inferior */
+            right: 0%;
+            transform: translateX(-10%);
+            font-size: 30px; /* Puedes ajustar este valor para cambiar el tamaño de la fuente */
+        }
+
+
+        #main-formula {
+            font-size: 36px; /* Ajusta el tamaño de fuente según tu preferencia */
+            text-align: center; /* Centra la fórmula en la página */
+            margin: 00px 0; /* Agrega un margen arriba y abajo para separación */
+            color: greenyellow; /* Ajusta el color si lo necesitas */
+            font-family: 'Aboreto', sans-serif;
+            font-size: 20px
+        }
+
+
+        .modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.1); /* Mayor opacidad para un fondo más oscuro */
+            pointer-events: none; /* Ignora eventos de puntero en el fondo de la ventana emergente */
+        }
+
+        .modal-content {
+            background-color: rgba(21, 32, 43, 0.65);
+            position: absolute; /* Posicionamiento absoluto dentro de su contenedor */
+            bottom: 10px; /* Posicionamiento desde la parte inferior de la ventana */
+            left: 10px; /* Posicionamiento desde el lado izquierdo de la ventana */
+            padding: 20px;
+            border: 1px solid #555; /* Borde más oscuro */
+            width: 40%; /* Ajuste del ancho según tus preferencias */
+            font-family: 'Share Tech Mono';
+            color: #ddd; /* Texto en color claro */
+            border-radius: 40px; /* Redondear las esquinas */
+            pointer-events: auto; /* Habilita eventos de puntero en el contenido de la ventana emergente */
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+            .close:hover,
+            .close:focus {
+                color: black;
+                text-decoration: none;
+                cursor: pointer;
+            }
+
+        #slopeTooltip {
+            position: relative;
+            padding: 5px;
+            border: 1px solid black;
+            border-radius: 5px;
+            pointer-events: none;
+            font-size: 18px;
+            color: white;
+        }
+
+
+        .guide-content {
+            font-size: 14px; /* Ajusta según tus preferencias */
+            text-align: left; /* Alinear el texto a la izquierda */
+        }
+    </style>
+</head>
+<body>
+    <div id="guideModal" class="modal">
+        <div class="modal-content guide-content">
+            <h2>Guía Rápida</h2>
+            <p><strong>1. Control deslizante:</strong> Ajusta el número de puntos.</p>
+            <p><strong>2. Puntos:</strong> Representan el tiempo de estudio y la calificación.</p>
+            <p><strong>3. Línea de Regresión:</strong> Muestra la relación entre el estudio y la calificación.</p>
+            <p><strong>4. Ventana Emergente:</strong> Haz clic en el botón de información para más detalles.</p>
+            <p><strong>5. Copiar Texto:</strong> Solo dentro de la ventana emergente.</p>
+            <p>Haz clic en cualquier lugar para cerrar esta guía.</p>
+        </div>
+    </div>
+    <div id="formula"></div>
+    <div id="container">
+        <h1>Regresión Lineal Interactiva</h1>
+        <div id="main-formula">\( y = \beta_0 + \beta_1 \cdot x + \epsilon \)</div>
+        <svg id="plot"></svg>
+        <div id="controls">
+            <div id="slopeTooltip" class="tooltip"></div>
+            <div id="infoModal" class="modal">
+                <div class="modal-content">
+                    <span class="close">&times;</span>
+                    <h2>Regresión Lineal Simple: Explicación</h2>
+                    <p>Imaginemos que estamos tratando de entender cómo afecta el tiempo de estudio a la calificación en un examen.</p>
+                    <p><strong>Fórmula:</strong> \( y = \beta_0 + \beta_1 \cdot x + \epsilon \)</p>
+                    <p><strong>Variables:</strong></p>
+                    <table>
+                        <tr>
+                            <td>\( y \)</td>
+                            <td>Calificación en el examen (\( y \)): Esta es la variable que queremos predecir. Se espera que sea más alta si el tiempo de estudio es mayor, pero también puede ser influenciada por otros factores como la habilidad del estudiante.</td>
+                        </tr>
+                        <tr>
+                            <td>\(\beta_0\)</td>
+                            <td>Calificación base (\(\beta_0\)): Esta sería la calificación que esperaríamos si el tiempo de estudio fuera cero. Es como un punto de partida en la relación entre el estudio y la calificación.</td>
+                        </tr>
+                        <tr>
+                            <td>\( \beta_1 \)</td>
+                            <td>Impacto del estudio (\(\beta_1\)): Representa cuánto aumenta la calificación por cada hora adicional de estudio. Es la "pendiente" de la relación entre el estudio y la calificación.</td>
+                        </tr>
+                        <tr>
+                            <td>\( x \)</td>
+                            <td>Tiempo de estudio (\( x \)): Es la cantidad de tiempo dedicado al estudio. Es la variable que estamos usando para tratar de explicar las diferencias en la calificación.</td>
+                        </tr>
+                        <tr>
+                            <td>\( \epsilon \)</td>
+                            <td>Factores adicionales (\( \epsilon \)): Estos son otros factores que pueden afectar la calificación pero que no se incluyen en el modelo. Podría incluir cosas como la calidad del material de estudio, el estado de ánimo del estudiante el día del examen, etc. En la ecuación, esto es el "error" o la parte de la calificación que no se puede explicar solo con el tiempo de estudio.</td>
+                        </tr>
+                    </table>
+
+                    <p><strong>Interpretación de la Pendiente:</strong> <span id="slopeExplanation"></span></p>
+                </div>
+            </div>
+            <label for="slider">Número de puntos (m):</label>
+            <input type="range" id="slider">
+            <button id="infoButton">Info</button>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js"></script>
+    <script src="{{ url_for('static', filename='RegresionLineal.js') }}"></script>
+    <script>
+        const svg = d3.select("#plot")
+            .attr("width", window.innerWidth)
+            .attr("height", window.innerHeight);
+        const margin = { top: 20, right: 20, bottom: 20, left: 20 };
+        const width = window.innerWidth - margin.left - margin.right;
+        const height = window.innerHeight - margin.top - margin.bottom - 60;
+        const minX = -window.innerWidth / 2 + margin.left;
+        const maxX = window.innerWidth / 2 - margin.right;
+        const minY = -window.innerHeight / 2 + margin.top;
+        const maxY = window.innerHeight / 2 - margin.bottom;
+        // Crear escalas para los ejes
+        const xScale = d3.scaleLinear().domain([minX, maxX]).range([margin.left, width - margin.right]);
+        const yScale = d3.scaleLinear().domain([minY, maxY]).range([height - margin.bottom, margin.top]);
+        // Calcula el tamaño de la etiqueta en función del tamaño de la ventana
+        const labelSize = Math.max(10, window.innerWidth * 0.007); // Ajusta este cálculo según tus preferencias
+        // Crear los ejes
+        const xAxisG = svg.append("g")
+            .attr("transform", `translate(0, ${yScale(0)})`)
+            .style("opacity", 0.2); // Ajustar la transparencia aquí
+        const yAxisG = svg.append("g")
+            .attr("transform", `translate(${xScale(0)}, 0)`)
+            .style("opacity", 0.2); // Ajustar la transparencia aquí
+        const xAxis = d3.axisBottom(xScale)
+            .tickSize(labelSize) // Ajustar el tamaño de las marcas de graduación
+            .tickPadding(2) // Espaciado entre las marcas y las etiquetas
+        const yAxis = d3.axisLeft(yScale)
+            .tickSize(labelSize)
+            .tickPadding(2)
+        // Crear la línea de regresión en el SVG (inicialmente invisible)
+        const regLine = svg.append("line").attr("stroke-width", 4);
+        // Crear un control deslizante para ajustar el número de puntos
+        const slider = d3.select("#slider")
+            .attr("min", 1)
+            .attr("max", 50) // Ajusta este valor según el número máximo de puntos que desees
+            .attr("step", 1)  // Agregar de a un punto
+            .attr("value", 1);
+        // Establecer el ancho del control deslizante
+        slider.style("width", "95%"); // Puedes ajustar este valor según tus necesidades
+        slider.on("input", function () {
+            const numberOfPoints = this.value;
+            points = generateRandomPoints(numberOfPoints, points);
+            draw(points);
+
+            // Verifica si el valor del control deslizante ha alcanzado su valor máximo
+            if (numberOfPoints == this.max) {
+                modal.style.display = "block"; // Muestra la ventana emergente
+            }
+        });
+        function generateRandomPoints(numberOfPoints, existingPoints = []) {
+            const newPoints = [...existingPoints];
+            const maxZeroXPoints = 2; // Máximo número de puntos con x = 0
+            let zeroXPointsCount = newPoints.filter(p => p.x === 0).length; // Contar los puntos existentes con x = 0
+
+            // Si no hay puntos existentes, agrega el punto (0,0) como el primer punto
+            if (newPoints.length === 0) {
+                newPoints.push({ x: 0, y: 0 });
+                zeroXPointsCount++;
+            }
+
+            // Si hay menos de 2 puntos, genera una pendiente aleatoria
+            let slope = (existingPoints.length < 2) ? (Math.random() * 2 - 1) : linearRegression(existingPoints).slope;
+
+            // Calcular i en función de la altura de la ventana
+            const i = window.innerHeight * 0.4;
+
+            while (newPoints.length < numberOfPoints) {
+                let x = Math.random() * maxX; // Generar x en el rango [0, maxX]
+
+                // Si se ha alcanzado el límite de puntos con x = 0, asegúrate de que x no sea 0
+                if (zeroXPointsCount >= maxZeroXPoints && x === 0) {
+                    x += 0.01; // Agregar un pequeño valor a x
+                }
+
+                // Calcular la coordenada y basada en la pendiente y agregar un poco de ruido aleatorio
+                const y = slope * x + (Math.random() * i - 0);
+                if (y >= minY && y <= maxY) {
+                    newPoints.push({ x, y });
+                    if (x === 0) zeroXPointsCount++; // Incrementar el contador de puntos con x = 0
+                }
+            }
+
+            // Si el número de puntos es menor que el valor actual, reduce la cantidad de puntos
+            if (numberOfPoints < newPoints.length) {
+                newPoints.length = numberOfPoints;
+            }
+
+            return newPoints;
+        }
+
+
+        // Función para calcular la regresión lineal
+        function linearRegression(points) {
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            const n = points.length;
+
+            for (let point of points) {
+                sumX += point.x;
+                sumY += point.y;
+                sumXY += point.x * point.y;
+                sumX2 += point.x ** 2;
+            }
+            const beta1 = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX ** 2);
+            const beta0 = (sumY - beta1 * sumX) / n;
+            return { slope: beta1, intercept: beta0 };
+        }
+        // Función para dibujar los puntos y la línea de regresión
+        function draw(points) {
+            // Dibujar los puntos con nuevas características
+            const circles = svg.selectAll("circle")
+                .data(points)
+                .join("circle")
+                .attr("cx", d => xScale(d.x))
+                .attr("cy", d => yScale(d.y))
+                .attr("r", 9) // Tamaño del punto
+                .attr("opacity", 0.9) // Transparencia
+                .style("fill", d => d3.interpolateViridis(yScale(d.y) / height)) // Color basado en la posición y
+                .on("mouseover", function (event, d) { // Tooltip al pasar el ratón
+                    const [x, y] = d3.pointer(event);
+                    const color = d3.select(this).style("fill"); // Obtiene el color del nodo
+
+                    tooltip.style("left", x + "px")
+                        .style("top", y + "px")
+                        .style("opacity", 1)
+                        .style("background-color", color) // Aplica el color del nodo al tooltip
+                        .html(`x: ${d.x.toFixed(2)}, y: ${d.y.toFixed(2)}`);
+                })
+                .on("mouseout", function () {
+                    tooltip.style("opacity", 0);
+                });
+            // Transición para desvanecer los puntos
+            circles.transition()
+                .duration(6000)
+                .attr("opacity", 0.2);
+            // Calcular la regresión lineal
+            const { intercept, slope } = linearRegression(points);
+            // Actualizar el tooltip de la pendiente
+            document.getElementById("slopeTooltip").innerHTML = `Pendiente: ${slope.toFixed(2)}`;
+            document.getElementById("slopeTooltip").style.opacity = 1; // Asegura que el tooltip sea visible
+
+            // Interpretación de la pendiente
+            let slopeExplanation = "";
+            if (Math.abs(slope) < 0.1) {
+                slopeExplanation = "La pendiente es tan cercana a cero que parece un estudiante el viernes por la noche: no quiere hacer nada. No hay relación entre el tiempo de estudio y la calificación en el examen.";
+            } else if (slope > 0) {
+                slopeExplanation = "La pendiente es positiva, como el ánimo de un estudiante antes del examen. A más tiempo de estudio, mejor calificación, lo cual es lo que todo profesor espera de su estudiante.";
+                if (slope > 1) {
+                    slopeExplanation += " La pendiente es tan pronunciada como la curva de aprendizaje de la física cuántica. Pequeños cambios en el estudio, grandes cambios en la calificación.";
+                } else {
+                    slopeExplanation += " La pendiente no es muy pronunciada, como un buen profesor que enseña poco a poco. Los cambios en el estudio y la calificación son amigos, van juntos.";
+                }
+            } else if (slope < 0) {
+                slopeExplanation = "La pendiente es negativa, como la cara de un estudiante cuando ve la nota con frustración. Más estudio, peor calificación?. Debe ser un error en el universo!.";
+                if (slope < -1) {
+                    slopeExplanation += " La pendiente es tan pronunciada como la caída en las calificaciones después de una fiesta de fin de semana. Pequeños cambios en el estudio, grandes cambios en la calificación.";
+                } else {
+                    slopeExplanation += " La pendiente no es muy pronunciada, pero sigue siendo negativa. Como esa sensación de 'Creí que lo entendía, pero luego tomé el examen'.";
+                }
+            }
+
+            // Calcular el color en función de la pendiente
+            const colorScale = d3.scaleLinear().domain([-1, 1]).range(["red", "green"]);
+            const lineColor = colorScale(slope);
+
+            // Actualizar el color del tooltip de la pendiente
+            document.getElementById("slopeTooltip").style.backgroundColor = lineColor;
+
+            // Actualizar la línea de regresión
+            regLine.attr("x1", xScale(minX))
+                .attr("y1", yScale(intercept + slope * minX))
+                .attr("x2", xScale(maxX))
+                .attr("y2", yScale(intercept + slope * maxX))
+                .attr("stroke", lineColor);
+            // Actualizar los ejes
+            xAxisG.call(xAxis)
+                .selectAll("text") // Seleccionar todas las etiquetas de texto
+                .style("font-size", `${labelSize}px`); // Aplicar el tamaño calculado
+            yAxisG.call(yAxis)
+                .selectAll("text")
+                .style("font-size", `${labelSize}px`);
+            // Dibujar la línea ajustada a la ventana
+            svg.selectAll("line").remove();
+            svg.append("line")
+                .attr("y1", yScale(intercept + slope * minX))
+                .attr("x2", xScale(maxX))
+                .attr("y2", yScale(intercept + slope * maxX))
+                .attr("stroke", lineColor)
+                .attr("stroke-width", 4);
+            // Define la fórmula LaTeX
+            const latexFormula = `y = ${intercept.toFixed(2)} + ${slope.toFixed(2)} \\cdot x + \\epsilon`;
+
+            // Convierte la fórmula LaTeX en un nodo HTML
+            const formulaNode = MathJax.tex2chtml(latexFormula);
+
+            // Reemplaza el contenido del elemento con id "formula" con el nodo HTML
+            document.getElementById("formula").innerHTML = '';
+            document.getElementById("formula").appendChild(formulaNode);
+            // Agregar la interpretación de la pendiente a la ventana emergente
+            document.getElementById("slopeExplanation").innerHTML = slopeExplanation;
+        }
+        // Crear tooltip fuera de la función draw
+        const tooltip = d3.select("body")
+            .append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+        // Inicializar la visualización con puntos aleatorios
+        let points = generateRandomPoints(2);
+        draw(points);
+
+        const modal = document.getElementById("infoModal");
+        const btn = document.getElementById("infoButton");
+        const span = document.getElementsByClassName("close")[0];
+
+        btn.onclick = function () {
+            modal.style.display = "block";
+        }
+
+        span.onclick = function () {
+            modal.style.display = "none";
+        }
+
+        window.onclick = function (event) {
+            if (event.target === modal) {
+                modal.style.display = "none";
+            }
+        }
+
+        const guideModal = document.getElementById("guideModal");
+        guideModal.style.display = "block"; // Muestra la guía al inicio
+
+        window.onclick = function (event) {
+            if (event.target === guideModal || event.target !== guideModal) {
+                guideModal.style.display = "none"; // Oculta la guía al hacer clic en cualquier lugar
+            }
+            if (event.target === modal) {
+                modal.style.display = "none"; // Mantén el comportamiento existente para la ventana emergente principal
+            }
+        };
+    </script>
+</body>
+</html>
