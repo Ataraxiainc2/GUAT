@@ -3,6 +3,8 @@ const CACHE_NAME = 'my-cache-v1';
 const urlsToCache = [
   // Agrega aquí otros recursos que quieras guardar en caché
   'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js'
+  'https://polyfill.io/v3/polyfill.min.js?features=es6'
+  'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js'
 ];
 
 // Instalación del Service Worker y almacenamiento en caché de recursos
