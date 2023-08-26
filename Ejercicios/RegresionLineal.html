@@ -421,6 +421,13 @@
                 modal.style.display = "none"; // Mantén el comportamiento existente para la ventana emergente principal
             }
         };
+        if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('../ServiceWorker.js').then(() => {
+      console.log('Service Worker registrado exitosamente');
+    }).catch((error) => {
+      console.error('Fallo al registrar el Service Worker:', error);
+    });
+  }
     </script>
 </body>
 </html>
