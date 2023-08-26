@@ -433,6 +433,24 @@
       console.error('Fallo al registrar el Service Worker:', error);
     });
   }
+        function handleResize() {
+    // Actualizar dimensiones
+    const newWidth = window.innerWidth - margin.left - margin.right;
+    const newHeight = window.innerHeight - margin.top - margin.bottom - 60;
+
+    // Actualizar escalas
+    xScale.range([margin.left, newWidth - margin.right]);
+    yScale.range([newHeight - margin.bottom, margin.top]);
+
+    // Actualizar tamaño del SVG
+    svg.attr("width", window.innerWidth)
+        .attr("height", window.innerHeight);
+
+    // Redibujar gráfico
+    draw(points);
+}
+
+window.addEventListener("resize", handleResize);
     </script>
 </body>
 </html>
