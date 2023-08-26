@@ -20,21 +20,18 @@ self.addEventListener('fetch', event => {
   event.respondWith(
     caches.match(event.request)
       .then(response => {
-        if (response) {
-          return response; // Si el recurso está en caché, devuelve la versión en caché
-        }
-
-        // Realiza la solicitud de red para obtener el recurso
-        return fetch(event.request).then(
-          response => {
-            // Verifica si recibimos una respuesta válida
-            if(!response || response.status !== 200 || response.type !== 'basic') {
+        // Return cached response if available
+        if (response) return response;
+        
+        // Else, fetch from network and cache
+        return fetch(event.request)
+          .then(response => {
+            if (!response || response.status !== 200) {
               return response;
             }
 
-            // Clona la respuesta para poder almacenarla en la caché
-            const responseToCache = response.clone();
-
+            // Cache the response
+            let responseToCache = response.clone();
             caches.open(CACHE_NAME)
               .then(cache => {
                 cache.put(event.request, responseToCache);
