@@ -454,6 +454,13 @@
     draw(points);
 }
 
+        if (!('fetch' in window)) {
+  // Cargar polyfill sólo si 'fetch' no está presente
+  var script = document.createElement('script');
+  script.src = 'https://polyfill.io/v3/polyfill.min.js?features=es6';
+  document.head.appendChild(script);
+}
+
 window.addEventListener("resize", handleResize);
     </script>
 </body>
