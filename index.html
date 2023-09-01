@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik+Mono+One&display=swap">
     <script async type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js"></script>
+    <script type="text/javascript" id="MathJax-script" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="manifest" href="manifiesto.json">
     <meta name="theme-color" content="#15202B">
     <style>
@@ -39,26 +40,6 @@
             border-radius: 5px;
         }
 
-        #formula-button {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: #1da1f2;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            text-align: center;
-            text-decoration: none;
-            display: inline-block;
-            font-size: 14px;
-            cursor: pointer;
-            border-radius: 5px;
-        }
-
-            #formula-button:hover {
-                background-color: #1089bf;
-            }
-
         .tooltip-podcast {
             position: absolute;
             display: none;
@@ -70,26 +51,14 @@
             left: 0px;
             bottom: 0px;
         }
-
-        .link-to-formulas {
-            position: absolute;
-            top: 2px;
-            left: 2px;
-            padding: 5px;
-            background-color: darkgreen;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-        }
     </style>
 </head>
 <body>
     <div id="tooltip" class="tooltip"></div>
     <div id="tooltip-prompt" class="tooltip"></div>
     <div id="tooltip-text" class="tooltip"></div>
-    <div id="tooltip-podcast" class="tooltip-podcast">
-    </div>
-    <a href="Formulas.html" target="_blank" style="position: absolute; top: 2px; left: 2px; padding: 5px; background-color: darkgreen; color: white; text-decoration: none; border-radius: 5px;">Ver Fórmulas</a>
+    <div id="tooltip-podcast" class="tooltip-podcast"></div>
+    <div id="tooltipFormula" class="tooltip"></div>
     <div id="chart-container"></div>
     <script>
         // Obtener el tamaño de la pantalla
@@ -104,8 +73,9 @@
             const padding = 2;
             const width = document.documentElement.clientWidth - 2 * padding;
             const height = document.documentElement.clientHeight - 2 * padding;
-            const margin = { top: padding, right: 500, bottom: padding, left: padding };
+            const margin = { top: padding, right: padding, bottom: padding, left: padding };
             let root = d3.hierarchy(data);
+            let seventhGenColor = null;
 
             let nodeId = 0;
             root.each(d => {
@@ -157,10 +127,6 @@
                 .style("font", "16px 'Arial', monospace")
                 .attr("transform", `translate(0,${margin.top})`);
 
-
-
-
-
             function update(source) {
                 const duration = d3.event && d3.event.altKey ? 2500 : 250;
                 const treeData = tree(root);
@@ -198,8 +164,8 @@
                     d.y0 += shiftAmount;
                 });
 
-                // Aplica un ajuste adicional de distancia horizontal entre enlaces para generaciones específicas
-                const adjustments = [0, -200, -300, -400, -50, 0, 300, 800];
+                const scaleFactor = window.innerWidth / 1200; // 1200 es una constante base que puedes ajustar
+                const adjustments = [0, -300, -300, -350, -50, 0, 150, 200, 400].map(x => x * scaleFactor);
 
                 root.eachBefore(d => {
                     if (d.depth < adjustments.length) {
@@ -224,7 +190,8 @@
                     .attr("fill-opacity", 0)
                     .attr("stroke-opacity", 0)
                     .on("click", (event, d) => {
-                        if (d.children || d._children) { // Solo actualiza si el nodo tiene hijos
+                        console.log("Generación actual:", d.depth); // <-- Aquí se muestra la generación en la consola
+                        if (d.children || d._children) {
                             // Contraer hermanos
                             if (d.parent) {
                                 d.parent.children.forEach(sibling => {
@@ -259,11 +226,56 @@
                             // Actualizar la visualización
                             update(d);
                         }
+
+
                     });
+
+                function showTooltipFormula(description, url) {
+                    const tooltipFormula = document.getElementById('tooltipFormula');
+                    tooltipFormula.style.display = 'block'; // Muestra el tooltip
+                    tooltipFormula.style.position = 'fixed';  // Posición fija en la ventana
+                    tooltipFormula.style.top = '10px';  // Posición desde la parte superior
+                    tooltipFormula.style.right = '10px';  // Posición desde la parte derecha
+                    tooltipFormula.style.backgroundColor = '#15202B'; // Color de fondo del tooltip
+                    tooltipFormula.style.color = '#B0C4DE';
+                    tooltipFormula.innerHTML = `${description}<br><span style="font-size: 11px;">Click sobre la fórmula para aprender más</span>`; // Añade la descripción y el texto en tamaño más pequeño
+                }
                 nodeEnter.append("circle")
                     .attr("r", d => 5 / (1 + 1 * d.depth))
-                    .attr("fill", d => d.data.color || "white");
-
+                    .attr("fill", d => {
+                        if (d.depth === 8) {
+                            return d.parent.color;  // Hereda el color del nodo padre (generación 7)
+                        }
+                        d.color = d.data.color || "white";  // Usa su propio color o blanco por defecto
+                        return d.color;
+                    })
+                    .on("click", (event, d) => {
+                        console.log("Clic en el nodo: ", d);  // Para debug
+                        if (d.depth === 8 && d.data.url) {
+                            window.open(d.data.url, '_blank');  // Abre la URL en una nueva pestaña
+                        }
+                    })
+                // Añadir fórmulas si el nodo está en la última jerarquía y tiene una fórmula
+                nodeEnter.filter(d => d.depth === 8 && d.data.mathTex)  // Asume que la última jerarquía tiene profundidad 8
+                    .append("foreignObject")
+                    .attr("width", 600)
+                    .attr("height", 150)
+                    .attr("y", 20)  // Posición vertical relativa al nodo
+                    .attr("x", 10)  // Posición horizontal relativa al nodo
+                    .html(d => `<div class='math-tex' style='font-size:24px; color: ${d.parent.color};'>\\(${d.data.mathTex}\\)</div>`)  // Aumentado el tamaño de la fuente a 24px
+                    .on("mouseover", (event, d) => {
+                        if (d.data.description) {
+                            showTooltipFormula(d.data.description, d.data.url);
+                        }
+                    })
+                    .on("mouseout", (event, d) => {
+                        hideTooltipFormula();
+                    })
+                    .on("click", (event, d) => {
+                        if (d.data.url) {
+                            window.open(d.data.url, '_blank');  // Abre la URL en una nueva pestaña
+                        }
+                    });
                 const getFontSize = function (d) {
                     // Si ya hemos calculado el tamaño de fuente para este nodo, retornarlo
                     if (d.fontSize) return d.fontSize;
@@ -281,8 +293,8 @@
                             siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
                         }
                     }
-                    let fontSize = Math.min(baseFontSize / (1 + 0.1 * d.depth), availableWidth / textWidth * 24, siblingDistance / textHeight * 24);
-                    fontSize = fontSize * (1 - 0.04 * d.depth);
+                    let fontSize = Math.min(baseFontSize / (1 + 0.5 * d.depth), availableWidth / textWidth * 20, siblingDistance / textHeight * 20);
+                    fontSize = fontSize * (1 - 0.02 * d.depth);
                     fontSize = Math.max(fontSize, 12);
 
                     // Almacenar el tamaño de fuente en el nodo
@@ -294,8 +306,16 @@
                 const text = nodeEnter.append("text")
                     .attr("dy", d => d.children == null ? "0.3em" : "-0.2em")
                     .attr("x", 5)
-                    .text(wrapText) // Utiliza la función wrapText aquí
-                    .attr("fill", d => d.data.color || "white")
+                    .text(wrapText)
+                    .attr("fill", d => {
+                        if (d.depth === 7) {
+                            seventhGenColor = d.data.color; // Actualiza el color si estás en la generación 7
+                        }
+                        if (d.depth === 8) {
+                            return d.parent.color;  // Hereda el color del nodo padre (generación 7)
+                        }
+                        return d.depth === 7 ? seventhGenColor : (d.data.color || "white"); // Utiliza el color de la generación 7 para la generación 7 y usa su propio color o blanco para las generaciones anteriores
+                    })
                     .attr("stroke-linejoin", "round")
                     .attr("stroke-width", 3)
                     .attr("stroke", "none")
@@ -304,13 +324,13 @@
 
                 // Transición para que el texto aparezca gradualmente
                 text.transition()
-                    .duration(duration) // Duración de la transición (puedes ajustar este valor)
+                    .duration(duration)
                     .attr("fill-opacity", 1);
 
                 // Añade el manejador de eventos de clic aquí
                 text.on("click", (event, d) => showTooltip(d.data.name, d.data.color || "white", event)); // pasa el color como segundo argumento
 
-                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.020;
+                let hoverFontSize = Math.min(windowWidth, windowHeight) * 0.015;
                 text
                     .on("mouseenter", function (event, d) {
                         d3.select(this).style("font-size", hoverFontSize + "px");
@@ -356,7 +376,15 @@
 
                 const linkEnter = link.enter().append("path")
                     .attr("fill", "none")
-                    .attr("stroke", d => d.target.data.color || "#808080")
+                    .attr("stroke", d => {
+                        if (d.target.depth === 8) {
+                            return d.target.parent.color;  // Inherits the color from the parent node (generation 7)
+                        }
+                        if (d.target.depth === 7) {
+                            return d.target.data.color;  // Uses the color based on the grade
+                        }
+                        return d.target.depth >= 7 ? seventhGenColor : (d.target.data.color || "#808080");
+                    })
                     .attr("stroke-opacity", 0.4)
                     .attr("stroke-width", 1.5)
                     .attr("d", d => {
@@ -400,7 +428,14 @@
                     d.x0 = d.x;
                     d.y0 = d.y;
                 });
+
+                // Llamar a MathJax para renderizar todas las fórmulas en el SVG.
+                // Este llamado puede ir al final de tu función update.
+                setTimeout(() => {
+                    MathJax.typeset();
+                }, 0);
             }
+
             update(root); // Llamada a la función de actualización
 
 
@@ -465,15 +500,13 @@
             //fetch('/datos')
             //  .then(response => response.json())
         }).catch(function (error) { });
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('ServiceWorker.js').then(() => {
+                console.log('Service Worker registrado exitosamente');
+            }).catch((error) => {
+                console.error('Fallo al registrar el Service Worker:', error);
+            });
+        }
     </script>
-    <script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('ServiceWorker.js').then(() => {
-      console.log('Service Worker registrado exitosamente');
-    }).catch((error) => {
-      console.error('Fallo al registrar el Service Worker:', error);
-    });
-  }
-</script>
 </body>
 </html>
