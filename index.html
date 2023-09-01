@@ -267,9 +267,6 @@
                             showTooltipFormula(d.data.description, d.data.url);
                         }
                     })
-                    .on("mouseout", (event, d) => {
-                        hideTooltipFormula();
-                    })
                     .on("click", (event, d) => {
                         if (d.data.url) {
                             window.open(d.data.url, '_blank');  // Abre la URL en una nueva pestaña
