@@ -29,11 +29,11 @@
         }
 
         .tooltip {
+                font-size: 14px !important;
             font-family: 'Rubik Mono One';
             position: absolute;
             display: none;
             padding: 5px;
-            font-size: 18px;
             background-color: white;
             color: #15202B;
             border: 1px solid black;
@@ -44,7 +44,6 @@
             position: absolute;
             display: none;
             padding: 0px;
-            font-size: 12px;
             background-color: #15202B;
             color: #15202B;
             border-radius: 2px;
@@ -87,8 +86,8 @@
                 .separation((a, b) => {
                     // Incrementar el factor de separación para las generaciones más profundas
                     let separationFactor = (a.parent === b.parent ? 1 : 2) / a.depth;
-                    if (a.depth >= 6) separationFactor *= 1.2;
-                    if (a.depth >= 7) separationFactor *= 0.5;
+                    if (a.depth >= 6) separationFactor *= 1.5;
+                    if (a.depth >= 7) separationFactor *= 2;
                     return separationFactor * 0.1;
                 });
 
@@ -165,7 +164,7 @@
                 });
 
                 const scaleFactor = window.innerWidth / 1200; // 1200 es una constante base que puedes ajustar
-                const adjustments = [0, -300, -300, -350, -50, 0, 150, 200, 400].map(x => x * scaleFactor);
+                const adjustments = [0, -300, -300, -390, -250, -400, -200, 100, 300].map(x => x * scaleFactor);
 
                 root.eachBefore(d => {
                     if (d.depth < adjustments.length) {
@@ -293,9 +292,9 @@
                             siblingDistance = d.x - d.parent.children[nodeIndex - 1].x;
                         }
                     }
-                    let fontSize = Math.min(baseFontSize / (1 + 0.5 * d.depth), availableWidth / textWidth * 20, siblingDistance / textHeight * 20);
-                    fontSize = fontSize * (1 - 0.02 * d.depth);
-                    fontSize = Math.max(fontSize, 12);
+                    let fontSize = Math.min(baseFontSize / (1 + 0.01 * d.depth), availableWidth / textWidth * 1, siblingDistance / textHeight * 1);
+                    fontSize = fontSize * (1 - 0.001 * d.depth);
+                    fontSize = Math.max(fontSize, 14);
 
                     // Almacenar el tamaño de fuente en el nodo
                     d.fontSize = fontSize + "px";
@@ -496,7 +495,7 @@
                 const height = document.documentElement.clientHeight - 2 * padding;
                 // Actualiza el tamaño del gráfico aquí
             });
-
+            up
             //fetch('/datos')
             //  .then(response => response.json())
         }).catch(function (error) { });
