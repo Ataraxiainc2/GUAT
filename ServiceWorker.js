@@ -22,28 +22,10 @@ self.addEventListener('install', event => {
 // Manejo de solicitudes de red
 self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Devuelve la respuesta en caché si está disponible
-        if (response) return response;
-        
-        // De lo contrario, obtiene la respuesta de la red y la almacena en caché
-        return fetch(event.request)
-          .then(response => {
-            if (!response || response.status !== 200) {
-              return response;
-            }
-
-            // Almacena la respuesta en caché
-            let responseToCache = response.clone();
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
-
-            return response;
-          }
-        );
-      })
+    // Intenta primero obtener el recurso de la red
+    fetch(event.request).catch(() => {
+      // Si la solicitud a la red falla, intenta obtener el recurso desde el caché
+      return caches.match(event.request);
+    })
   );
 });
