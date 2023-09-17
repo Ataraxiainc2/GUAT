@@ -229,16 +229,32 @@
 
                     });
 
-                function showTooltipFormula(description, url) {
-                    const tooltipFormula = document.getElementById('tooltipFormula');
-                    tooltipFormula.style.display = 'block'; // Muestra el tooltip
-                    tooltipFormula.style.position = 'fixed';  // Posición fija en la ventana
-                    tooltipFormula.style.top = '10px';  // Posición desde la parte superior
-                    tooltipFormula.style.right = '10px';  // Posición desde la parte derecha
-                    tooltipFormula.style.backgroundColor = '#15202B'; // Color de fondo del tooltip
-                    tooltipFormula.style.color = '#B0C4DE';
-                    tooltipFormula.innerHTML = `${description}<br><span style="font-size: 11px;">Click sobre la fórmula para aprender más</span>`; // Añade la descripción y el texto en tamaño más pequeño
-                }
+        function showTooltipFormula(description, url) {
+            const tooltipFormula = document.getElementById('tooltipFormula');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+
+            tooltipFormula.style.display = 'block';
+            tooltipFormula.style.position = 'fixed';  // Utiliza 'fixed' en lugar de 'absolute' 
+            tooltipFormula.style.left = `${(windowWidth - tooltipFormula.offsetWidth) / 2}px`;  // Centra horizontalmente
+            tooltipFormula.style.top = `${(windowHeight - tooltipFormula.offsetHeight) / 2}px`;  // Centra verticalmente
+            tooltipFormula.style.backgroundColor = '#FF4500';  // Un naranja intenso
+            tooltipFormula.style.color = '#FFFFFF';            // Blanco puro
+            tooltipFormula.style.padding = '10px';
+            tooltipFormula.style.borderRadius = '8px';
+            tooltipFormula.style.fontSize = '10px';
+            tooltipFormula.innerHTML = `${description}<br><span style="font-size: 9px;">Click sobre la fórmula para aprender más</span>`;
+
+            // Añade un listener para ocultar el tooltip cuando se haga clic en cualquier lugar
+            setTimeout(() => {  // Usa setTimeout para evitar que se active inmediatamente
+                document.addEventListener('click', hideTooltipFormula, { once: true });
+            }, 0);
+        }
+
+        function hideTooltipFormula() {
+            const tooltipFormula = document.getElementById('tooltipFormula');
+            tooltipFormula.style.display = 'none';
+        }
                 nodeEnter.append("circle")
                     .attr("r", d => 5 / (1 + 1 * d.depth))
                     .attr("fill", d => {
@@ -261,12 +277,13 @@
                     .attr("height", 150)
                     .attr("y", 20)  // Posición vertical relativa al nodo
                     .attr("x", 10)  // Posición horizontal relativa al nodo
-                    .html(d => `<div class='math-tex' style='font-size:24px; color: ${d.parent.color};'>\\(${d.data.mathTex}\\)</div>`)  // Aumentado el tamaño de la fuente a 24px
-                    .on("mouseover", (event, d) => {
-                        if (d.data.description) {
-                            showTooltipFormula(d.data.description, d.data.url);
-                        }
-                    })
+                    .html(d => `<div class='math-tex' style='font-size:20px; color: ${d.parent.color};'>\\(${d.data.mathTex}\\)</div>`)  // Aumentado el tamaño de la fuente a 24px
+            .on("mouseover", (event, d) => {
+                if (d.data.description) {
+                    showTooltipFormula(d.data.description, d.data.url);
+                }
+            })
+
                     .on("click", (event, d) => {
                         if (d.data.url) {
                             window.open(d.data.url, '_blank');  // Abre la URL en una nueva pestaña
