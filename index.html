@@ -271,13 +271,20 @@
                         }
                     })
                 // Añadir fórmulas si el nodo está en la última jerarquía y tiene una fórmula
-                nodeEnter.filter(d => d.depth === 8 && d.data.mathTex)  // Asume que la última jerarquía tiene profundidad 8
-                    .append("foreignObject")
-                    .attr("width", 600)
-                    .attr("height", 150)
-                    .attr("y", 20)  // Posición vertical relativa al nodo
-                    .attr("x", 10)  // Posición horizontal relativa al nodo
-                    .html(d => `<div class='math-tex' style='font-size:20px; color: ${d.parent.color};'>\\(${d.data.mathTex}\\)</div>`)  // Aumentado el tamaño de la fuente a 24px
+        nodeEnter.filter(d => d.depth === 8 && d.data.mathTex)
+            .append("foreignObject")
+            .attr("width", 600)  // Tamaño inicial
+            .attr("height", 400)  // Tamaño inicial
+            .attr("y", 20)
+            .attr("x", 10)
+            .html(d => `<div class='math-tex' style='font-size:20px; color: ${d.parent.color};'>\\(${d.data.mathTex}\\)</div>`)
+            .each(function (d) {  // Usamos 'each' para operar en cada nodo individualmente
+                // Después de que se renderiza, calculamos el tamaño real
+                let contentSize = this.getBBox();  // Obtiene el tamaño del contenido
+                d3.select(this)
+                    .attr("width", contentSize.width)
+                    .attr("height", contentSize.height);
+            })
             .on("mouseover", (event, d) => {
                 if (d.data.description) {
                     showTooltipFormula(d.data.description, d.data.url);
