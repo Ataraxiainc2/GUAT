@@ -6,7 +6,7 @@ const urlsToCache = [
   'https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.js',
   'https://fonts.googleapis.com/css2?family=Aboreto&display=swap',
   'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
-  'https://polyfill.io/v3/polyfill.min.js?features=es6'
+  'https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6'
 ];
 
 // Instalación del Service Worker y almacenamiento en caché de recursos

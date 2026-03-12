@@ -14,8 +14,12 @@
     <link rel="manifest" href="manifiesto.json">
     <meta name="theme-color" content="#15202B">
     <style>
+        html, body {
+            height: 100%;
+        }
+
         body {
-            font-family: 'Arial', monospace;
+            font-family: 'Arial', sans-serif;
             background-color: #15202B;
             color: #FFFFFF;
             margin: 0;
@@ -96,7 +100,7 @@
             root.descendants().forEach(node => {
                 node.x0 = node.x;
                 node.y0 = node.y;
-                if (node.depth > -0) {
+                if (node.depth >= 0) {
                     if (node.children) {
                         node._children = node.children;
                         node.children = null;
@@ -126,8 +130,8 @@
                 .style("font", "16px 'Arial', monospace")
                 .attr("transform", `translate(0,${margin.top})`);
 
-            function update(source) {
-                const duration = d3.event && d3.event.altKey ? 2500 : 250;
+            function update(source, event) {
+                const duration = event && event.altKey ? 2500 : 250;
                 const treeData = tree(root);
                 root.eachBefore(d => {
                     d.x0 = d.x;
@@ -223,7 +227,7 @@
                             // Muestra el nuevo tooltip con el texto de la etiqueta
                             showTooltip(d.data.name + (d.data.grade ? " (" + d.data.grade + ")" : ""));
                             // Actualizar la visualización
-                            update(d);
+                            update(d, event);
                         }
 
 
@@ -355,11 +359,10 @@
                     .on("mouseenter", function (event, d) {
                         d3.select(this).style("font-size", hoverFontSize + "px");
                     })
-                    .on('mouseleave', function (d) {
-                        d3.select(this).attr('stroke', 'none');
-                    })
                     .on("mouseleave", function (d) {
-                        d3.select(this).style("font-size", getFontSize);
+                        d3.select(this)
+                            .attr('stroke', 'none')
+                            .style("font-size", getFontSize);
                     });
 
                 // Transición para los nodos y texto existentes
@@ -371,13 +374,10 @@
                     .attr("stroke-opacity", 1);
 
                 // Actualizar la posición del texto existente
-                node.selectAll("text") // Selección de todos los textos existentes
-                    .transition() // Aplicar transición
-                    .duration(duration) // Duración de la transición
-                    .attr("x", function (d) {
-                        let text = this;
-                        let textLength = text.getComputedTextLength();
-                    });
+                node.selectAll("text")
+                    .transition()
+                    .duration(duration)
+                    .attr("x", 5);
 
                 // Exiting nodes will be immediately removed without transition
                 const nodeExit = node.exit()
@@ -456,7 +456,7 @@
                 }, 0);
             }
 
-            update(root); // Llamada a la función de actualización
+            update(root, null); // Llamada a la función de actualización
 
 
             function showAdditionalTooltip(tooltipId, text, url, color, position = 'default', verticalOffset = '10px') {
@@ -512,14 +512,17 @@
             document.getElementById("chart-container").appendChild(svg.node());
 
             window.addEventListener("resize", function () {
-                const width = document.documentElement.clientWidth - 2 * padding;
-                const height = document.documentElement.clientHeight - 2 * padding;
-                // Actualiza el tamaño del gráfico aquí
+                const newWidth = document.documentElement.clientWidth - 2 * padding;
+                const newHeight = document.documentElement.clientHeight - 2 * padding;
+                svg.attr("width", newWidth).attr("height", newHeight);
+                tree.size([newHeight - margin.top - margin.bottom, newWidth - margin.left - margin.right]);
+                update(root, null);
             });
-            up
-            //fetch('/datos')
-            //  .then(response => response.json())
-        }).catch(function (error) { });
+        }).catch(function (error) {
+            console.error('Error al cargar los datos:', error);
+            document.getElementById('chart-container').innerHTML =
+                '<p style="color:red;padding:20px;">Error al cargar los datos. Recarga la página.</p>';
+        });
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('ServiceWorker.js').then(() => {
                 console.log('Service Worker registrado exitosamente');
